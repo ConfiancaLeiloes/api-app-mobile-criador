@@ -7,6 +7,6 @@
 error_log
 
 #
-apis/vendor
+vendor
 .env
-apis/composer.lock
+composer.lock
