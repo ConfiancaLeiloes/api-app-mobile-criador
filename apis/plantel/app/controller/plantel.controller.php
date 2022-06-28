@@ -3,9 +3,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 class PlantelController 
 {
-    public function __construct() 
+    private $plantel;
+    public function __construct($plantel) 
     {
-        @$this->$plantel = new PlantelModel();
+       $this->plantel = new PlantelModel();
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -13,7 +14,7 @@ class PlantelController
         //$plantel = new PlantelModel();
 
 
-        $resultado = @$this->$plantel->index();
+        $resultado = $this->plantel->index();
         $response->getBody()->write($resultado);
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        

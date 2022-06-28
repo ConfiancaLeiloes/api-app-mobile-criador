@@ -7,5 +7,10 @@
     "require": {
         "slim/slim": "4.*",
         "slim/psr7": "^1.5"
+    },
+    "config": {
+        "platform": {
+            "php": "7.4.0"
+         }
     }
 }
