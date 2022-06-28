@@ -79,8 +79,10 @@ class PlantelModel
                 $res = $pdo->query($query_sql);
                 $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
                 
+
                 if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum animal foi localizado!", "data" => ""]);
                 $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
+
                 
                 return json_encode($resposta);
         } catch (\Throwable $th) {

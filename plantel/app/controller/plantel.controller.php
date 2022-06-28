@@ -37,8 +37,6 @@ class PlantelController
     {
         //$plantel = new PlantelModel();
 
-        // var_dump($request->getUri());
-        // return "foi";
         $resultado = $this->plantel->detalhes_animal_cobricoes($request);
         $response->getBody()->write($resultado);
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
