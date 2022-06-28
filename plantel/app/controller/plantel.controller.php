@@ -19,4 +19,14 @@ class PlantelController
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        
     }
+    public function detalhes_animal_cobricoes(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        //$plantel = new PlantelModel();
+
+
+        $resultado = $this->plantel->detalhes_animal_cobricoes($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
+       
+    }
 }
