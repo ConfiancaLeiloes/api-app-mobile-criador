@@ -3,10 +3,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 class AnimaisController 
 {
-    private $plantel;
-    public function __construct($plantel) 
+    private $animais;
+    public function __construct($animais) 
     {
-       $this->plantel = new AnimaisModel();
+       $this->animais = new AnimaisModel();
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface

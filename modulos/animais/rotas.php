@@ -1,2 +1,2 @@
 <?php
-$app->get('/detalhes-animal-cobricoes', AnimaisController::class . ':detalhes_animal_cobricoes');
+$app->get('/animais/detalhes-animal-cobricoes', AnimaisController::class . ':detalhes_animal_cobricoes');
