@@ -5,3 +5,8 @@
 # .vscode/
 
 error_log
+
+#
+apis/vendor
+.env
+apis/composer.lock
