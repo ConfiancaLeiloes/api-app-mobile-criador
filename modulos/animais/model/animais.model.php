@@ -1,6 +1,6 @@
 <?php
 use Psr\Http\Message\ServerRequestInterface;
-class PlantelModel
+class AnimaisModel
 {
     private $conn;
 

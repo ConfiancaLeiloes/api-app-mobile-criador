@@ -47,9 +47,17 @@ $app->setBasePath((function () {
     return '';
 })());
 
-$app->get('/detalhes-animal-cobricoes/{id}', PlantelController::class . ':detalhes_animal_cobricoes');
+//$app->get('/detalhes-animal-cobricoes', AnimaisController::class . ':detalhes_animal_cobricoes');
 
 # ROTAS DE ANIMAIS
+require_once ('./modulos/animais/rotas.php');
+
+# ROTAS DE FINANCEIRO
+require_once ('./modulos/financeiro/rotas.php');
+
+# ROTAS DE NEGOCIOS
+require_once ('./modulos/negocios/rotas.php');
+
 
 try {
     $app->run();

@@ -1,12 +1,12 @@
 <?php
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-class PlantelController 
+class AnimaisController 
 {
     private $plantel;
     public function __construct($plantel) 
     {
-       $this->plantel = new PlantelModel();
+       $this->plantel = new AnimaisModel();
     }
 
     public function index(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -16,7 +16,7 @@ class PlantelController
 
         exit;
         //$plantel = new PlantelModel();
-        $resultado = $this->plantel->index();
+        $resultado = $this->animais->index();
         $response->getBody()->write($resultado);
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        
@@ -28,7 +28,7 @@ class PlantelController
 
         exit;
         //$plantel = new PlantelModel();
-        $resultado = $this->plantel->index();
+        $resultado = $this->animais->index();
         $response->getBody()->write($resultado);
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        
@@ -37,7 +37,7 @@ class PlantelController
     {
         //$plantel = new PlantelModel();
 
-        $resultado = $this->plantel->detalhes_animal_cobricoes($request);
+        $resultado = $this->animais->detalhes_animal_cobricoes($request);
         $response->getBody()->write($resultado);
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        
