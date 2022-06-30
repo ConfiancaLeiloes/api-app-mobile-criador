@@ -13,6 +13,20 @@ class UsuarioController
 
 
 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 	/**
 	 * Método
 	 * @author Antonio Ferreira <@toniferreirasantos>
@@ -26,6 +40,15 @@ class UsuarioController
 	}
 
 
+
+
+
+
+
+
+
+
+
 	/**
 	 * Método perfil() -> Obtem os dados do perfil do usuário logado
 	 * @author Antonio Ferreira <@toniferreirasantos>
@@ -34,6 +57,7 @@ class UsuarioController
 	public function perfil(ServerRequestInterface $request, ResponseInterface $response)
 	{
 
+		// return json("USUÁRIO NÃO INFORMADO!", 404);
 		$res = erro("USUÁRIO NÃO INFORMADO!", 404);
 		
 		$post = body_params();
@@ -72,6 +96,15 @@ class UsuarioController
 
 
 
+
+
+
+
+
+
+
+
+
 	/**
 	 * Método
 	 * @author Antonio Ferreira <@toniferreirasantos>
@@ -87,6 +120,16 @@ class UsuarioController
 
 
 
+
+
+
+
+
+
+
+
+
+
 	/**
 	 * Método
 	 * @author Antonio Ferreira <@toniferreirasantos>
@@ -96,75 +139,87 @@ class UsuarioController
 
 		$post = body_params();
 
-		if ( $post->id_pessoa > 0 ) {
+		if ( isset($post->id_pessoa) && ((int)$post->id_pessoa <= 0 || is_null($post->id_pessoa) || vazio($post->id_pessoa) ) ) {
+			return json('Identificação de Usuário inválida!', $response);
 		}
 		
+
+
 		# CAMPOS OBRIGATÓRIOS
-		// $post->nome_razao_social;
-		$post->nome_propriedade_fazenda;
-		$post->telefone_celular;
-		$post->email_usuario;
-		$post->senha_usuario;
-		$post->id_estado;
-		$post->id_cidade;
+		if ( vazio($post->nome_razao_social) ) {
+			return json("Campo [NOME / RAZÃO SOCIAL] não informado!", $response);
+		}
+
+		if ( vazio($post->nome_propriedade_fazenda) ) {
+			return json("Campo [NOME NO HARAS / FAZENDA] não informado!", $response);
+		}
 		
-		# CAMPOS {{NÃO}} OBRIGATÓRIOS
-		$post->nascimento;
-		$post->CPF_CNPJ; # NÃO OBRIGATÓRIO ???
-		$post->rg_ie;
-		$post->telefone_fixo;
-		$post->cep;
-		$post->logradouro;
-		$post->Numero;
-		$post->bairro;
-		$post->complemento;
+		if ( vazio($post->email_usuario) ) {
+			return json("Campo [E-MAIL] não informado!", $response);
+		}
+
+		if ( !valida_email($post->email_usuario) ) {
+			return json("[E-MAIL] INVÁLIDO!", $response);
+		}
+
+		$post->email_usuario = strtolower($post->email_usuario);
 
 		
+
+		if ( vazio($post->senha_usuario) ) {
+			return json("Campo [SENHA] não informado!", $response);
+		}
+		if ( strlen($post->senha_usuario) < 6 ) {
+			return json("Campo [SENHA] inválido!", $response);
+		}
+
+		if ( vazio($post->telefone_celular) ) {
+			return json("Campo [CELULAR] não informado!", $response);
+		}
+
+		if ( !valida_celular($post->telefone_celular) ) {
+			return json("Número de [CELULAR] INVÁLIDO!", $response);
+		}
+
+		if ( (int)$post->id_cidade <= 0 ) {
+			return json("Campo [CIDADE] não informado!", $response);
+		}
+
+		if ( (int)$post->id_estado <= 0 ) {
+			return json("Campo [ESTADO / UF] não informado!", $response);
+		}
+
+		if ( isset($post->cep) && !vazio($post->cep) ) {
+			if ( strlen($post->cep) < 8 ) {
+				return json("Campo [CEP] inválido!", $response);
+			}
+		}
+
 		if ( !vazio($post->CPF_CNPJ) ) {
 
 			if ( !cpf_cnpj_valido($post->CPF_CNPJ) ) {
-				// exit("DEBUG #1");
-				$res = erro("Campo [CPF / CNPJ] inválido!");
-			}
-			else {
-				$post->CPF_CNPJ = somente_numeros($post->CPF_CNPJ);
-				$res = $this->$usuario->cadastro($post);
-			}
-
-		}
-		else {
-
-			if ( vazio($post->nome_razao_social) ) {
-				$res = erro("Campo [NOME / RAZÃO SOCIAL] não informado!");
-			}
-			elseif ( vazio($post->nome_propriedade_fazenda) ) {
-				$res = erro("Campo [NOME NO HARAS / FAZENDA] não informado!");
-			}
-			elseif ( vazio($post->email_usuario) ) {
-				$res = erro("Campo [E-MAIL] não informado!");
-			}
-			elseif ( vazio($post->senha_usuario) ) {
-				$res = erro("Campo [SENHA] não informado!");
-			}
-			elseif ( vazio($post->telefone_celular) ) {
-				$res = erro("Campo [CELULAR] não informado!");
-			}
-			elseif ( (int)$post->id_cidade <= 0 ) {
-				$res = erro("Campo [CIDADE] não informado!");
-			}
-			elseif ( (int)$post->id_estado <= 0 ) {
-				$res = erro("Campo [ESTADO / UF] não informado!");
-			}
-			else {
-				$res = $this->$usuario->cadastro($post);
+				return json('Campo [CPF / CNPJ] inválido!', $response);
 			}
 			
+			$post->CPF_CNPJ = somente_numeros($post->CPF_CNPJ);
 		}
 
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		
+		if ( $post->id_pessoa > 0 ) {
+			$res = $this->$usuario->update($post);
+		}
+		else {
+			$res = $this->$usuario->cadastro($post);
+		}
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		
+		// return json(json_decode($res)->message, $response);
+	
 		$response->getBody()->write($res);
-		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');	 
+		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
 	}
 
 

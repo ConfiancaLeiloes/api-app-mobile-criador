@@ -32,7 +32,7 @@ $app->add(function (Request $request, RequestHandlerInterface $handler): Respons
 
 // The RoutingMiddleware should be added after our CORS middleware so routing is performed first
 $app->addRoutingMiddleware();
-
+$app->addBodyParsingMiddleware();
 $app->addErrorMiddleware(true, true, true);
 
 $app->setBasePath((function () {

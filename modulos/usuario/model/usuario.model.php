@@ -27,6 +27,22 @@ class UsuarioModel
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/**
 	 * Método perfil()
 	 * @author Antonio Ferreira <@toniferreirasantos>
@@ -97,6 +113,20 @@ class UsuarioModel
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	/**
 	 * Método cadastro()
 	 * @author Antonio Ferreira <@toniferreirasantos>
@@ -104,30 +134,310 @@ class UsuarioModel
 	*/
 	public function cadastro($usuario) {
 
-		// $connect = $this->conn->conectar();
+		$connect = $this->conn->conectar();
 
-		// $usuario->id_pessoa;
-		// $usuario->id_situacao;
-		// $usuario->nome_razao_social;
-		// $usuario->nome_propriedade_fazenda;
-		// $usuario->CPF_CNPJ;
-		// $usuario->nascimento;
-		// $usuario->rg_ie;
-		// $usuario->email_usuario;
-		// $usuario->telefone_fixo;
-		// $usuario->telefone_celular;
-		// $usuario->id_estado;
-		// $usuario->id_cidade;
-		// $usuario->nome_cidade;
-		// $usuario->sigla_estado;
-		// $usuario->cep;
-		// $usuario->logradouro;
-		// $usuario->Numero;
-		// $usuario->bairro;
-		// $usuario->complemento;
 
-		return erro("CADASTRO em desenvolvimento...", 200, [$usuario]);
+
+		# VERIFICANDO DADOS REPETIDOS NO BANCO
+		$query =
+		"	SELECT * FROM tab_pessoas
+			WHERE (
+				lower(email_usuario) = :email_usuario
+				AND id_pessoa = id_usuario_sistema
+			)
+		";
+
+		$stmt = $connect->prepare($query);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+	
+		$stmt->bindParam(':email_usuario', $usuario->email_usuario);
+		
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE[0]: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+		if ( $stmt->rowCount() > 0 ) {
+			return erro("Já existe um cadastro com o e-mail '{$usuario->email_usuario}' Verifique e tente novamente.");
+		}
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		$connect->beginTransaction();
+
+
+		# INSERT NOVO USUÁRIO
+		$query_insert =
+		"	INSERT INTO tab_pessoas (
+				id_plano_adesao,
+    		id_situacao_assinatura,
+
+				nome_razao_social,
+				nome_propriedade_fazenda,
+
+				rg_ie,
+				CPF_CNPJ,
+				nascimento,
+				email_usuario,
+				senha_usuario,
+				telefone_fixo,
+				telefone_celular,
+				
+				id_estado,
+				id_cidade,
+				
+				cep,
+				Numero,
+				bairro,
+				logradouro,
+				complemento,
+
+				data_limite_licenca,
+    		informacoes_diversas,
+
+				id_situacao,
+				DATA_CRIACAO,
+				DATA_ATUALIZACAO,
+				ID_USUARIO_CRIACAO,
+				ID_USUARIO_ATUALIZACAO
+			)
+			VALUES (
+
+				'1',   -- GRATUITO PARA TESTAR [id_plano_adesao]
+    		'106', -- EM EXPERIÊNCIA [id_situacao_assinatura]
+
+				:nome_razao_social,
+				:nome_propriedade_fazenda,
+				
+				:rg_ie,
+				:CPF_CNPJ,
+				:nascimento,
+				:email_usuario,
+				:senha_usuario,
+				:telefone_fixo,
+				:telefone_celular,
+
+				:id_estado,
+				:id_cidade,
+
+				:cep,
+				:Numero,
+				:bairro,
+				:logradouro,
+				:complemento,
+
+				-- [data_limite_licenca] -> 15 DIAS A PARTIR DA DATA DO CADASTRO',
+				DATE_ADD(curdate(), INTERVAL 15 DAY),
+
+				-- [informacoes_diversas]
+				'Usuário cadastrado via API do App Mobile',
+
+				'1', -- [id_situacao] -> PROVISÓRIO
+				CURDATE(),
+				CURDATE(),
+				'1', -- [ID_USUARIO_CRIACAO] -> PROVISÓRIO
+				'1'  -- [ID_USUARIO_ATUALIZACAO] -> PROVISÓRIO
+			)
+		";
+				
+		$stmt = $connect->prepare($query_insert);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+		$stmt->bindParam(':nome_razao_social', $usuario->nome_razao_social);
+		$stmt->bindParam(':nome_propriedade_fazenda', $usuario->nome_propriedade_fazenda);
+
+		$stmt->bindParam(':rg_ie', $usuario->rg_ie);
+		$stmt->bindParam(':CPF_CNPJ', $usuario->CPF_CNPJ);
+		$stmt->bindParam(':nascimento', $usuario->nascimento);
+		$stmt->bindParam(':email_usuario', $usuario->email_usuario);
+		$stmt->bindParam(':senha_usuario', $usuario->senha_usuario);
+		$stmt->bindParam(':telefone_fixo', $usuario->telefone_fixo);
+		$stmt->bindParam(':telefone_celular', $usuario->telefone_celular);
+
+		$stmt->bindParam(':id_estado', $usuario->id_estado, PDO::PARAM_INT);
+		$stmt->bindParam(':id_cidade', $usuario->id_cidade, PDO::PARAM_INT);
+
+		$stmt->bindParam(':cep', $usuario->cep);
+		$stmt->bindParam(':Numero', $usuario->Numero);
+		$stmt->bindParam(':bairro', $usuario->bairro);
+		$stmt->bindParam(':logradouro', $usuario->logradouro);
+		$stmt->bindParam(':complemento', $usuario->complemento);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			return erro("Usuário não cadastrado!");
+		}
+
+		$id_user_adicionado = $connect->lastInsertId();
+
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		
+		# UPDATE CADASTRO
+		$query_update =
+		" UPDATE tab_pessoas SET
+				id_usuario_sistema = :id_user_adicionado,
+				ID_USUARIO_CRIACAO = :id_user_adicionado,
+				ID_USUARIO_ATUALIZACAO = :id_user_adicionado
+			WHERE id_pessoa = :id_user_adicionado
+		";
+
+		$stmt = $connect->prepare($query_update);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+		$stmt->bindParam(':id_user_adicionado', $id_user_adicionado, PDO::PARAM_INT);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE[1.1]: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			return erro("Usuário do sistema não atualizado!");
+		}
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+		# INSERT FAZENDA
+		$query_insert_fazenda =
+		"  INSERT INTO tab_fazendas_usuario (
+				id_usuario,
+				id_fazenda,
+				informacoes_diversas,
+				
+				DATA_CRIACAO,
+				DATA_ATUALIZACAO,
+
+				ID_USUARIO_CRIACAO,
+				ID_USUARIO_ATUALIZACAO
+			) 
+			VALUES (
+				:id_usuario,
+				:id_fazenda,
+				'Cadastro via API do App Mobile',
+				
+				CURDATE(),
+				CURDATE(),
+				
+				:ID_USUARIO_CRIACAO,
+				:ID_USUARIO_ATUALIZACAO
+			)
+		";
+		$stmt = $connect->prepare($query_insert_fazenda);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+		$stmt->bindParam(':id_usuario', $id_user_adicionado, PDO::PARAM_INT);
+		$stmt->bindParam(':id_fazenda', $id_user_adicionado, PDO::PARAM_INT);
+		$stmt->bindParam(':ID_USUARIO_CRIACAO', $id_user_adicionado, PDO::PARAM_INT);
+		$stmt->bindParam(':ID_USUARIO_ATUALIZACAO', $id_user_adicionado, PDO::PARAM_INT);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE[2]: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			return erro("Fazenda não cadastrada!");
+		}
+
+		$id_fazenda_adicionada = $connect->lastInsertId();
+
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		
+		
+		# OBTEBNDO PRIVILEGIOS
+		$query_modulos_app = "SELECT group_concat(id_modulo_app) AS MODULOS FROM tab_modulos_aplicativo";
+		$stmt = $connect->prepare($query_modulos_app);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+		if( !$stmt->execute() ) {
+			retorno_usuario('error', 'Erro: SQLSTATE: '. $stmt->errorInfo()[1]); // http://us3.php.net/pdo.errorInfo	
+		}
+		$modulos = $stmt->fetch(PDO::FETCH_OBJ);
+  
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		# INSERT PRIVILEGIOS
+		$query_insert_privilegios =
+		"	INSERT INTO tab_privilegios_usarios_aplicativo (
+				id_modulo,
+				id_usuario_fazenda
+			) 
+			VALUES (
+				:id_modulo,
+				:id_usuario_fazenda
+			)
+		";
+		$stmt = $connect->prepare($query_insert_privilegios);
+		if( !$stmt ) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+		foreach (explode(',', $modulos->MODULOS) as $id_modulo) {
+
+			$stmt->bindParam(":id_modulo", $id_modulo, PDO::PARAM_INT);
+			$stmt->bindParam(":id_usuario_fazenda", $id_fazenda_adicionada, PDO::PARAM_INT);
+			
+			if( !$stmt->execute() ) {
+				return erro("SQLSTATE[3][{$id_modulo}]: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+			}
+			if ( $stmt->rowCount() <= 0 ) {
+				return erro('Privilégio não cadastrado!');
+			}
+		
+		} # foreach
+		
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		# E-MAILS (??)
+
+		$connect->commit();
+		return sucesso("CADASTRO REALIZADO COM SUCESSO!" . (modo_dev() ? " - [$id_user_adicionado]" : ''), [$usuario], 201);
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/**
+	 * Método update()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return 
+	*/
+	public function update($usuario) {
+		return erro("UPDATE em desenvolvimento...", 200, [$usuario]);
+	}
+
+
+
+
+
 
 
 	/**

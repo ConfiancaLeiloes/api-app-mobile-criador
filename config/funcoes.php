@@ -48,11 +48,11 @@ function last_level_uri() {
 */
 function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) { 
 
-  if ( count($dados) > 0 ) {
-    for ($i=0; $i < count($dados); $i++) { 
-      $dados[$i] = numerics_json($dados[$i]);
-    }
-  }
+  // if ( count($dados) > 0 ) {
+  //   for ($i=0; $i < count($dados); $i++) { 
+  //     $dados[$i] = numerics_json($dados[$i]);
+  //   }
+  // }
 
   return json_encode([
     'codigo' => (boolean)$resultado,
@@ -98,7 +98,14 @@ function erro($mensagem, $http_status_code = 400, $dados = []) {
  * @return 
 */
 function body_params() {
-  return @json_decode(file_get_contents('php://input'));
+  
+  $objeto = @json_decode(file_get_contents('php://input'), true);
+
+  foreach ($objeto as $nome_campo => $valor) {
+    $objeto[$nome_campo] = trim($valor);
+  }
+
+  return (object)$objeto;
 }
 
 
@@ -129,4 +136,21 @@ function numerics_json($objeto, $ignore_list = []) {
     }
   }
   return (object)$campos;
+}
+
+
+
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
+function json($msg = '', $response, $http_status_code = 400) {
+  
+  $res = erro( vazio($msg) ? json_decode($res)->message : $msg );
+
+  $response->getBody()->write($res);
+  $http_status_code = $http_status_code != json_decode($res)->http_status_code ? $http_status_code : json_decode($res)->http_status_code;
+
+  return $response->withStatus( $http_status_code )->withHeader('Content-type', 'application/json');	 
 }
