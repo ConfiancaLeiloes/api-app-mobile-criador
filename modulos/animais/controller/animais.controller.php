@@ -20,17 +20,6 @@ class AnimaisController
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        
     }
-    public function teste(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
-    {
-
-        var_dump("teste rota 3");
-
-        exit;
-        $resultado = $this->animais->index();
-        $response->getBody()->write($resultado);
-        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
-       
-    }
     public function detalhes_animal_cobricoes(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         //$plantel = new PlantelModel();
@@ -73,6 +62,13 @@ class AnimaisController
     public function detalhes_animal_negocios(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $resultado = $this->animais->detalhes_animal_negocios($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
+       
+    }
+    public function detalhes_animal_perfil(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $resultado = $this->animais->detalhes_animal_perfil($request);
         $response->getBody()->write($resultado);
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        

@@ -5,6 +5,9 @@
 $modulos = [
 	'negocios' => [
 		ClienteController::class
+	],
+	'usuario' => [
+		UsuarioController::class
 	]
 ];
 	
@@ -15,3 +18,5 @@ foreach ($modulos as $nome_modulo => $classes) {
 		$app->$request_method("/{$nome_modulo}/{$nome_metodo}", $classe . ":{$nome_metodo}");
 	}
 }
+
+// $app->post("/usuario/perfil", UsuarioController::class . ":perfil");
