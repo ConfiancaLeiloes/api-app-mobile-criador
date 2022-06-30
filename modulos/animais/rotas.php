@@ -16,6 +16,9 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 $modulos = [
 	'animais' => [
 		AnimaisController::class
+	],
+	'reproducao' => [
+		ReproducaoController::class
 	]
 ];
 	

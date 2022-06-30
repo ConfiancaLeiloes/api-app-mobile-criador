@@ -22,6 +22,9 @@ class AnimaisModel
         return json_encode(["mensagem" => "Hello confianca", "Conexão com o BD: " => $retorno]);
     }
 
+    /**
+     * PLANTEL
+     */
     public function detalhes_animal_cobricoes(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -137,36 +140,71 @@ class AnimaisModel
         $params = (array)$request->getParsedBody();
         $id_animal = $params['id_animal'];
         $id_proprietario = $params['id_proprietario'];
+        $url_fotos = URL_FOTOS;
 
         if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => "2","status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
         try {
             $query_sql = 
                         "SELECT  
-                        tab_exames.id_exame as ID_EXAME,
-                        UPPER(tab_tipos_exames.nome_exame) as TIPO_EXAME,
-                        IF(ISNULL(tab_laboratorio.nome_razao_social),'NÃO INFORMADO',CONCAT(UPPER(tab_laboratorio.nome_razao_social),'\nTelefone: ',IF(ISNULL(tab_laboratorio.telefone_celular) OR TRIM(tab_laboratorio.telefone_celular) = '','SEM NÚMERO',tab_laboratorio.telefone_celular), '\nE-mail: ',IF(ISNULL(tab_laboratorio.email_usuario) OR TRIM(tab_laboratorio.email_usuario) = '','SEM E-MAIL',tab_laboratorio.email_usuario))) as LABORATORIO_EXAME,
-                        UPPER(tab_resultados.descricao) as RESULTADO_EXAME,
-                        DATE_FORMAT(tab_exames.data_resultado, '%d/%m/%Y') as DATA_RESULTADO_EXAME, 
-                        DATE_FORMAT(tab_exames.data_validade, '%d/%m/%Y') as DATA_VALIDADE_EXAME,
-                        UPPER(tab_situacoes.descricao) as SITUACAO_EXAME
-                    FROM tab_exames 
-                        JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_exames.id_situacao
-                        JOIN tab_situacoes as tab_resultados ON tab_resultados.id_situacao = tab_exames.id_resultado
-                        JOIN tab_tipos_exames ON tab_tipos_exames.id_tipo_exame = tab_exames.id_tipo_exame
-                        JOIN tab_pessoas as tab_laboratorio ON tab_laboratorio.id_pessoa = tab_exames.id_laboratorio   
+                        tab_animais.id_animal as ID_ANIMAL, 
+                        UPPER(tab_grupo_animais.descricao) as GRUPO_ANIMAL, 
+                        tab_animais.nome as NOME_ANIMAL, 
+                        UPPER(tab_animais.marca) as MARCA_ANIMAL, 
+                        UPPER(tab_sexos.sexo_animal) as SEXO_ANIMAL, 
+                        DATE_FORMAT(tab_animais.data_nascimento, '%d/%m/%Y') as NASCIMENTO_ANIMAL, 
+                        tab_pai_animal.nome as PAI_ANIMAL, 
+                        tab_mae_animal.nome as MAE_ANIMAL, 
+                        tab_animais.registro_associacao as REGISTRO_ANIMAL, 
+                        UPPER(tab_situacoes.descricao) as DESCRICAO_SITUACAO_ANIMAL,  
+                        IF(ISNULL(tab_socios.cotas_socio_01),'0.00',tab_socios.cotas_socio_01) as COTAS_ANIMAL,
+                        IF(tab_animais.foto_perfil_animal = 'sem_foto.jpg',null,CONCAT('$url_fotos',tab_animais.foto_perfil_animal)) as FOTO_ANIMAL 
+                    FROM tab_animais  
+                        JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_animais.id_situacao   
+                        JOIN tab_sexos ON tab_sexos.id_sexo = tab_animais.id_sexo   
+                        JOIN tab_grupo_animais ON tab_grupo_animais.id_grupo_animal = tab_animais.id_grupo  
+                        LEFT JOIN tab_animais AS tab_pai_animal ON tab_pai_animal.id_animal = tab_animais.id_pai  
+                        LEFT JOIN tab_animais AS tab_mae_animal ON tab_mae_animal.id_animal = tab_animais.id_mae   
+                        LEFT JOIN tab_socios ON tab_socios.id_animal = tab_animais.id_animal   
                     WHERE 
-                        tab_exames.id_animal = '$id_animal' AND tab_exames.id_usuario_sistema = '$id_proprietario' AND
-                        tab_exames.id_situacao = '1'
-                    GROUP BY tab_exames.id_exame 
-                    ORDER BY tab_exames.data_resultado ASC";
+                        (tab_animais.id_pai = :ID_ANIMAL OR tab_animais.id_mae = :ID_ANIMAL) AND
+                        tab_animais.id_usuario_sistema = :ID_PROPRIETARIO AND
+                        tab_animais.id_situacao_cadastro = '11' AND
+                        tab_animais.id_situacao = '1' AND
+                        tab_animais.id_situacao_vida = '15'
+                    GROUP BY tab_animais.id_animal  
+                    ORDER BY tab_animais.nome ASC";
 
                 $pdo = $this->conn->conectar();
-                $res = $pdo->query($query_sql);
+                $res = $pdo->prepare($query_sql);
+
+                $res->bindValue(':ID_ANIMAL', $id_animal);
+                $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
+
+                $res->execute();
                 $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
                 if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum animal foi localizado!", "data" => ""]);
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
+                
+                $total_machos = 0;
+                $total_femeas = 0;
+                foreach ($retorno as $key => $value) {
+                    // Soma os Animais
+                trim($value['SEXO_ANIMAL']) == "MACHO" ? $total_machos++ : $total_femeas++;
+
+                //Acrescenta contador
+                $retorno[$key]['CONTADOR'] =  $key+1;
+                }
+
+                // Monta o Array do Somatório
+                $somatorio = [
+                    "TOTAL_GERAL_FILHOS" => (int)$key+1,
+                    "TOTAL_MACHOS" => (int)$total_machos,
+                    "TOTAL_FEMEAS" => (int)$total_femeas
+                ];
+
+                
+                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno, "RESUMO" => $somatorio];
 
                 
                 return json_encode($resposta);
@@ -740,7 +778,9 @@ class AnimaisModel
                         "SELECT  
                         tab_animais.id_animal as ID_ANIMAL,
                         UPPER(tab_grupo_animais.descricao) as GRUPO_ANIMAL,  
-                        tab_animais.nome as NOME_ANIMAL, 
+                        tab_animais.nome as NOME_ANIMAL,
+                        tab_racas.descricao AS RACA_ANIMAL,
+                        tab_racas.id_raca AS ID_RACA_ANIMAL, 
                         UPPER(tab_animais.marca) as MARCA_ANIMAL, 
                         UPPER(tab_sexos.sexo_animal) as SEXO_ANIMAL, 
                         DATE_FORMAT(tab_animais.data_nascimento, '%d/%m/%Y') as NASCIMENTO_ANIMAL, 
@@ -753,7 +793,8 @@ class AnimaisModel
                     FROM tab_animais  
                         JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_animais.id_situacao   
                         JOIN tab_sexos ON tab_sexos.id_sexo = tab_animais.id_sexo   
-                        JOIN tab_grupo_animais ON tab_grupo_animais.id_grupo_animal = tab_animais.id_grupo  
+                        JOIN tab_grupo_animais ON tab_grupo_animais.id_grupo_animal = tab_animais.id_grupo
+                        JOIN tab_racas ON tab_animais.id_raca = tab_racas.id_raca  
                         LEFT JOIN tab_animais AS tab_pai_animal ON tab_pai_animal.id_animal = tab_animais.id_pai  
                         LEFT JOIN tab_animais AS tab_mae_animal ON tab_mae_animal.id_animal = tab_animais.id_mae   
                         LEFT JOIN tab_socios ON tab_socios.id_animal = tab_animais.id_animal   
