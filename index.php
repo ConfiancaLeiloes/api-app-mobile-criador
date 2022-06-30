@@ -12,6 +12,9 @@ header('Access-Control-Allow-Headers:X-Request-With');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
+setlocale (LC_ALL, 'pt_BR');
+date_default_timezone_set('America/Sao_Paulo');
+
 require_once 'loads.php';
 
 $app = AppFactory::create();

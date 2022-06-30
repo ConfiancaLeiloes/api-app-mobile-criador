@@ -11,18 +11,77 @@ class UsuarioModel
 		$this->conn = new ConexaoModel();
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
 	/**
 	 * Método login()
 	 * @author Antonio Ferreira <@toniferreirasantos>
 	 * @return 
 	*/
-	public function login() {
+	public function login($login) {
 
-		// $connect = $this->conn->conectar();
+		$connect = $this->conn->conectar();
 
+		$query = 
+		"	SELECT  
 
+				tab_pessoas.id_pessoa,
+				tab_pessoas.id_situacao,
+				tab_proprietario.data_limite_licenca,
+				MD5(CONCAT(CURTIME(),tab_pessoas.id_pessoa)) as TOKEN
+				
+			FROM tab_fazendas_usuario 
+			JOIN tab_pessoas ON tab_pessoas.id_pessoa = tab_fazendas_usuario.id_usuario
+			JOIN tab_pessoas as tab_proprietario ON (
+				tab_proprietario.id_pessoa = tab_fazendas_usuario.id_fazenda 
+			)
+			WHERE (
+				tab_pessoas.email_usuario = :email AND 
+				tab_pessoas.senha_usuario = :senha
+			)
+			GROUP BY tab_pessoas.id_pessoa
+		";
 
-		return erro("LOGIN Em desenvolvimento...");
+		$stmt = $connect->prepare($query);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+		$stmt->bindParam(':email', $login->email);
+		$stmt->bindParam(':senha', $login->senha);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			return erro("E-mail e/ou Senha incorretos! Verifique e tente novamente", 404);
+		}
+		if ( $stmt->rowCount() > 1 ) {
+			return erro("Dados cadastrais duplicados! Contate a Confiança!");
+		}
+
+		$usuario = $stmt->fetch(PDO::FETCH_OBJ);
+		if ( $usuario->id_situacao != 1 ) {
+			return erro("Situação cadastral INATIVA! Contate a Confiança para maiores informações!");
+		}
+
+		if ( strtotime(DATA_ATUAL) > strtotime($usuario->data_limite_licenca) ) {
+			return erro("Data limite de Licença expirada! Contate a Confiança para maiores informações!");
+		}
+
+		unset($usuario->id_situacao);
+		unset($usuario->data_limite_licenca);
+
+		return sucesso("Login Realizado com Sucesso!", [$usuario]);
 	}
 
 
@@ -58,6 +117,8 @@ class UsuarioModel
 				tab_pessoas.id_situacao,
 				UPPER(tab_pessoas.nome_razao_social) AS nome_razao_social,
 				UPPER(tab_pessoas.nome_propriedade_fazenda) AS nome_propriedade_fazenda,
+
+				substring_index(tab_pessoas.nome_razao_social, ' ', 1) as PRIMEIRO_NOME_USUARIO,
 
 				tab_pessoas.CPF_CNPJ,
 				tab_pessoas.nascimento,
@@ -158,7 +219,7 @@ class UsuarioModel
 			return erro("SQLSTATE[0]: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
 		}
 		if ( $stmt->rowCount() > 0 ) {
-			return erro("Já existe um cadastro com o e-mail '{$usuario->email_usuario}' Verifique e tente novamente.");
+			return erro("Já existe um cadastro com o e-mail '{$usuario->email_usuario}' Verifique e tente novamente.", 400, [$usuario]);
 		}
 
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -396,10 +457,14 @@ class UsuarioModel
 		} # foreach
 		
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+		
 		# E-MAILS (??)
+		
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		$connect->commit();
+		if ( !modo_dev() ) {
+			$connect->commit();
+		}
 		return sucesso("CADASTRO REALIZADO COM SUCESSO!" . (modo_dev() ? " - [$id_user_adicionado]" : ''), [$usuario], 201);
 	}
 
@@ -431,7 +496,122 @@ class UsuarioModel
 	 * @return 
 	*/
 	public function update($usuario) {
-		return erro("UPDATE em desenvolvimento...", 200, [$usuario]);
+
+		
+		$connect = $this->conn->conectar();
+
+		# VERIFICANDO DADOS REPETIDOS NO BANCO
+		$query =
+		"	SELECT * FROM tab_pessoas
+			WHERE (
+				lower(email_usuario) = :email_usuario
+				AND id_pessoa = id_usuario_sistema
+				AND id_pessoa <> :id_usuario
+			)
+		";
+
+		$stmt = $connect->prepare($query);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+	
+		$stmt->bindParam(':email_usuario', $usuario->email_usuario);
+		$stmt->bindParam(':id_usuario', $usuario->id_pessoa, PDO::PARAM_INT);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE[0]: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+		if ( $stmt->rowCount() > 0 ) {
+			return erro("Já existe um cadastro com o e-mail '{$usuario->email_usuario}' Verifique e tente novamente.", 400, [$usuario]);
+		}
+		
+		
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		$SUBQUERY_CAMPOS_NAO_OBRIGATORIOS = '';
+		$campos_nao_obrigatorios = [
+			'cep',
+			'rg_ie',
+			'CPF_CNPJ',
+			'nascimento',
+			'Numero',
+			'bairro',
+			'logradouro',
+			'complemento',
+			'telefone_fixo',
+		];
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+		foreach ($usuario as $nome_campo => $valor) {
+
+			if ( in_array($nome_campo, $campos_nao_obrigatorios) ) {
+				$valor = str_replace(['"', "'", '´', '`'], '', $valor);
+				$valor = vazio($valor) ? 'null' : "'{$valor}'";
+				$SUBQUERY_CAMPOS_NAO_OBRIGATORIOS .= "\n{$nome_campo} = $valor,";
+			}
+
+		}
+
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		$connect->beginTransaction();
+
+		$query_update =
+		"	UPDATE tab_pessoas SET
+				nome_razao_social				 = :nome_razao_social,
+				nome_propriedade_fazenda = :nome_propriedade_fazenda,
+				
+				telefone_celular = :telefone_celular,
+				email_usuario = :email_usuario,
+				senha_usuario = :senha_usuario,
+
+				id_estado = :id_estado,
+				id_cidade = :id_cidade,
+
+				{$SUBQUERY_CAMPOS_NAO_OBRIGATORIOS}
+
+				DATA_ATUALIZACAO = CURDATE(),
+				ID_USUARIO_ATUALIZACAO = :id_usuario
+			WHERE (
+				id_pessoa = :id_usuario
+			)
+		";
+
+		$stmt = $connect->prepare($query_update);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+		$stmt->bindParam(':id_usuario', $usuario->id_pessoa, PDO::PARAM_INT);
+
+		$stmt->bindParam(':nome_razao_social', $usuario->nome_razao_social);
+		$stmt->bindParam(':nome_propriedade_fazenda', $usuario->nome_propriedade_fazenda);
+
+		$stmt->bindParam(':telefone_celular', $usuario->telefone_celular);
+		$stmt->bindParam(':email_usuario', $usuario->email_usuario);
+		$stmt->bindParam(':senha_usuario', $usuario->senha_usuario);
+
+		$stmt->bindParam(':id_estado', $usuario->id_estado, PDO::PARAM_INT);
+		$stmt->bindParam(':id_cidade', $usuario->id_cidade, PDO::PARAM_INT);
+		
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		
+
+		if ( !modo_dev() ) {
+			$connect->commit();	
+		}
+		return sucesso("CADASTRO ATUALIZADO COM SUCESSO!" . ($stmt->rowCount() <= 0 ? " - NENHUMA INFORMAÇÃO ALTERADA! " : ''));
 	}
 
 
