@@ -151,7 +151,7 @@ class UsuarioController
       $msg_erro = 'Usuário não identificado!';
     }
 		elseif ( !$this->$usuario->tem_permissao_acesso($id_usuario, $id_modulo) ) {
-			$msg_erro = 'Você não tem autorização para acessar este Módulo!';
+			$msg_erro = 'Você não tem autorização para acessar este Conteúdo!';
 		}
 		
 		if ( !vazio($msg_erro) ) {
@@ -179,7 +179,6 @@ class UsuarioController
 	{
 
 		$post = (object)$request->getParsedBody();
-		
 		$this->checa_permissao_acesso($post->id_usuario, 1);
 
 		if ( (int)$post->id_pessoa <= 0 ) {

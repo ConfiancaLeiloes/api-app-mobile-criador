@@ -2,7 +2,9 @@
 
 // $app->get('/modulo/medodo', ClienteController::class . ':metodo');
 
-if ( modo_dev() ) {
+
+
+if ( modo_dev() && !uri_contem('/usuario/login') ) {
 	UsuarioController::valida_token();
 }
 

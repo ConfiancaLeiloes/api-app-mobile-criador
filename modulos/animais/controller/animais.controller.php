@@ -73,4 +73,39 @@ class AnimaisController
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        
     }
+    public function detalhes_animal_sanitario(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $resultado = $this->animais->detalhes_animal_sanitario($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
+       
+    }
+    public function detalhes_animal_socios(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $resultado = $this->animais->detalhes_animal_socios($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
+       
+    }
+    public function listar_plantel(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $resultado = $this->animais->listar_plantel($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
+       
+    }
+    public function listar_racas(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $resultado = $this->animais->listar_racas($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
+       
+    }
+    public function menu_plantel(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $resultado = $this->animais->menu_plantel($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
+       
+    }
 }

@@ -27,6 +27,19 @@ function type_request($type = '') {
  * @author Antonio Ferreira <@toniferreirasantos>
  * @return 
 */
+function uri_contem($substring) {
+  if ( strpos(REQUEST_URI, $substring) === false ) {
+    return false;
+  }
+  return true;
+}
+
+
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
 function last_level_uri() {
 
   $uri_array = explode('/', REQUEST_URI);
