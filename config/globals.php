@@ -13,6 +13,9 @@ define('request_method', $request_method);
 define('DATA_ATUAL', $DATA_ATUAL);
 define('HORA_ATUAL', $HORA_ATUAL);
 
+define('DATA_HORA_ATUAL', $DATA_ATUAL .' '. $HORA_ATUAL);
+
+
 
 // $DB_MYSQL   = 'gc_confianca_criador';
 // $HOST_MYSQL = 'confiancacriador.digital';

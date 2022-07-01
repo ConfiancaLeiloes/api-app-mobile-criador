@@ -2,6 +2,10 @@
 
 // $app->get('/modulo/medodo', ClienteController::class . ':metodo');
 
+if ( modo_dev() ) {
+	UsuarioController::valida_token();
+}
+
 $modulos = [
 	'negocios' => [
 		ClienteController::class
@@ -19,4 +23,3 @@ foreach ($modulos as $nome_modulo => $classes) {
 	}
 }
 
-// $app->post("/usuario/perfil", UsuarioController::class . ":perfil");

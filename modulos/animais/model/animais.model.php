@@ -22,6 +22,9 @@ class AnimaisModel
         return json_encode(["mensagem" => "Hello confianca", "Conexão com o BD: " => $retorno]);
     }
 
+    /**
+     * PLANTEL
+     */
     public function detalhes_animal_cobricoes(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();

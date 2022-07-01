@@ -58,9 +58,12 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
     'codigo' => (boolean)$resultado,
     'message' => $mensagem,
     
+    'token_valido' => isset($_SESSION['token_valido']) ? $_SESSION['token_valido'] : true,
+    'tem_permissao' => isset($_SESSION['tem_permissao']) ? $_SESSION['tem_permissao'] : true,
+    
     'http_status_code' => $http_status_code,
     'modo_dev' => modo_dev(),
-    'data_hora_requisicao' => date('Y-m-d H:i:s'),
+    'data_hora_requisicao' => DATA_HORA_ATUAL,
     
     'data' => $dados
   ]);
@@ -153,4 +156,57 @@ function json($msg = '', $response, $http_status_code = 400) {
   $http_status_code = $http_status_code != json_decode($res)->http_status_code ? $http_status_code : json_decode($res)->http_status_code;
 
   return $response->withStatus( $http_status_code )->withHeader('Content-type', 'application/json');	 
+}
+
+
+
+function cripto($string) {
+  return base64_encode(base64_encode(base64_encode($string)));
+}
+function descripto($string) {
+  return base64_decode(base64_decode(base64_decode($string)));
+}
+
+
+
+function valida_token($id_modulo = 0) {
+  
+  @header("Content-type: application/json; charset=utf-8");
+
+  $post = body_params();
+  $post->token;
+
+  if ( !isset($post->token) ) {
+    exit(erro("Token de acesso não encontrado!"));
+  }
+  if ( vazio($post->token) ) {
+    exit(erro("Token de acesso não informado!"));
+  }
+
+  $inicio_sessao = descripto(explode('-', $post->token)[1]);
+
+  if ( vazio($inicio_sessao) ) {
+    exit(erro("Token de Sessão não encontrado!"));
+  }
+  
+  $d0 = strtotime(date('Y-m-d 00:00:00'));
+  $d1 = strtotime(date('Y-m-d 23:59:59')); # Determinando uma sessão de 24h
+  $limite_sessao = $inicio_sessao + ($d1 - $d0);
+
+  if ( strtotime(DATA_HORA_ATUAL) > $limite_sessao) {
+    // exit(erro("Token de acesso expirado!"));
+  }
+
+
+  
+  
+  if ( $id_modulo > 0 ) {
+    if ( $post->id_proprietario <= 0 ) {
+      exit(erro("Usuário não identificado!"));
+    }
+    
+    
+  }
+  
+  
 }

@@ -33,16 +33,17 @@ class UsuarioModel
 		$connect = $this->conn->conectar();
 
 		$query = 
-		"	SELECT  
-
-				tab_pessoas.id_pessoa,
+		"	SELECT
+				-- tab_pessoas.id_pessoa,
 				tab_pessoas.id_situacao,
 				tab_proprietario.data_limite_licenca,
-				MD5(CONCAT(CURTIME(),tab_pessoas.id_pessoa)) as TOKEN
+				tab_pessoas.id_pessoa AS ID_USUARIO,
+				tab_pessoas.id_usuario_sistema AS ID_PROPRIETARIO,
+				substring_index(tab_pessoas.nome_razao_social, ' ', 1) as PRIMEIRO_NOME_USUARIO
 				
 			FROM tab_fazendas_usuario 
 			JOIN tab_pessoas ON tab_pessoas.id_pessoa = tab_fazendas_usuario.id_usuario
-			JOIN tab_pessoas as tab_proprietario ON (
+			JOIN tab_pessoas AS tab_proprietario ON (
 				tab_proprietario.id_pessoa = tab_fazendas_usuario.id_fazenda 
 			)
 			WHERE (
@@ -78,9 +79,75 @@ class UsuarioModel
 			return erro("Data limite de Licença expirada! Contate a Confiança para maiores informações!");
 		}
 
+		// $usuario->TOKEN = md5(DATA_HORA_ATUAL . $usuario->id_pessoa) .'-'. cripto($usuario->ID_PROPRIETARIO) .'-'. cripto(strtotime(DATA_HORA_ATUAL));
+		// $usuario->TOKEN = md5(DATA_HORA_ATUAL . $usuario->ID_USUARIO) .'-'. cripto(strtotime(DATA_HORA_ATUAL));
+		$usuario->TOKEN = md5(DATA_HORA_ATUAL . $usuario->ID_USUARIO);
+
+		$connect->beginTransaction();
+
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		# ATUALIZANDO O TOKEN
+		$query_update_token =
+		"	UPDATE tab_pessoas SET
+				token_login_app = :TOKEN
+			WHERE (
+				id_pessoa = :id_pessoa AND 
+				id_usuario_sistema = :id_proprietario
+			)
+		";
+		$stmt = $connect->prepare($query_update_token);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+		$stmt->bindParam(':TOKEN', $usuario->TOKEN);
+		$stmt->bindParam(':id_pessoa', $usuario->ID_USUARIO);
+		$stmt->bindParam(':id_proprietario', $usuario->ID_PROPRIETARIO);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			return erro("Não foi possível atualizar o token! Verifique e tente novamente", 404);
+		}
+
+
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		# REGISTRANDO O LOG DE ACESSO
+		$query_insert_log_login =
+		"	INSERT INTO tab_log_login  (
+				id_usuario_sistema,
+				
+				data, hora,
+				
+				tipo,
+				ip,
+				versao                                        
+			) 
+			VALUES (
+				'{$usuario->ID_USUARIO}',
+				
+				CURDATE(), CURTIME(),
+				
+				'{$login->plataforma}',
+				'{$_SERVER['REMOTE_ADDR']}',
+				'app'
+			)
+		";
+		$stmt = $connect->prepare($query_insert_log_login);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		unset($usuario->id_situacao);
 		unset($usuario->data_limite_licenca);
 
+		$connect->commit();
 		return sucesso("Login Realizado com Sucesso!", [$usuario]);
 	}
 
@@ -93,12 +160,71 @@ class UsuarioModel
 
 
 
+	/**
+	 * Método valida_token()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return boolean
+	*/
+	public function token_valido($post) {
+
+		$connect = $this->conn->conectar();
+		
+		// Faz a consulta e verifica se o Token existe ativo para o usuário
+		$query_token = 
+		"	SELECT id_pessoa, token_login_app FROM tab_pessoas
+			WHERE	(
+				token_login_app = '{$post->token}' AND 
+				id_usuario_sistema = '{$post->id_usuario}'
+			)
+		";
+		$stmt = $connect->prepare($query_token);
+		if(!$stmt) {
+			return false;
+		}
+		// $stmt->bindParam(":id_pessoa", $id_pessoa, PDO::PARAM_INT);
+		
+		if( !$stmt->execute() ) {
+			return false;
+		}
+
+		return $stmt->rowCount() > 0;
+	}
+
+	
 
 
 
 
+	public function tem_permissao_acesso($id_usuario = 0, $id_modulo = 0) {
 
+		$connect = $this->conn->conectar();
 
+		$query =
+		"	SELECT
+				id_privilegio_aplicativo, 
+				tab_privilegios_usarios_aplicativo.id_usuario_fazenda, 
+				id_modulo
+			FROM tab_pessoas
+			JOIN tab_fazendas_usuario ON tab_fazendas_usuario.id_usuario = tab_pessoas.id_pessoa
+			JOIN tab_privilegios_usarios_aplicativo ON
+				tab_privilegios_usarios_aplicativo.id_usuario_fazenda = tab_fazendas_usuario.id_usuario_fazenda
+			WHERE (
+				id_pessoa = '$id_usuario'
+				AND id_modulo = '$id_modulo'
+			)
+		";
+
+		$stmt = $connect->prepare($query);
+		if(!$stmt) {
+			return false;
+		}
+		if( !$stmt->execute() ) {
+			return false;
+		}
+
+		return $stmt->rowCount() > 0;
+	}
+	
 
 
 
@@ -117,8 +243,6 @@ class UsuarioModel
 				tab_pessoas.id_situacao,
 				UPPER(tab_pessoas.nome_razao_social) AS nome_razao_social,
 				UPPER(tab_pessoas.nome_propriedade_fazenda) AS nome_propriedade_fazenda,
-
-				substring_index(tab_pessoas.nome_razao_social, ' ', 1) as PRIMEIRO_NOME_USUARIO,
 
 				tab_pessoas.CPF_CNPJ,
 				tab_pessoas.nascimento,
@@ -142,7 +266,9 @@ class UsuarioModel
 				(
 					SELECT count(id_animal) FROM tab_animais
 					WHERE tab_animais.id_usuario_sistema = :id_pessoa
-				) AS NUM_ANIMAIS
+				) AS NUM_ANIMAIS,
+
+				substring_index(upper	(tab_pessoas.nome_razao_social), ' ', 1) as PRIMEIRO_NOME_USUARIO
 
 
 			FROM tab_pessoas
@@ -287,8 +413,8 @@ class UsuarioModel
 				:logradouro,
 				:complemento,
 
-				-- [data_limite_licenca] -> 15 DIAS A PARTIR DA DATA DO CADASTRO',
-				DATE_ADD(curdate(), INTERVAL 15 DAY),
+				-- [data_limite_licenca] -> 5 DIAS A PARTIR DA DATA DO CADASTRO',
+				DATE_ADD(curdate(), INTERVAL 5 DAY),
 
 				-- [informacoes_diversas]
 				'Usuário cadastrado via API do App Mobile',
@@ -604,13 +730,9 @@ class UsuarioModel
 			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
 		}
 
-
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		
-
-		if ( !modo_dev() ) {
-			$connect->commit();	
-		}
+		$connect->commit();	
 		return sucesso("CADASTRO ATUALIZADO COM SUCESSO!" . ($stmt->rowCount() <= 0 ? " - NENHUMA INFORMAÇÃO ALTERADA! " : ''));
 	}
 
