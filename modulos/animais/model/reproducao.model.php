@@ -285,4 +285,298 @@ class ReproducaoModel
         }
         
     }
+
+    public function listar_coberturas(ServerRequestInterface $request)
+    {
+        $params = (array)$request->getParsedBody();
+        $id_proprietario     =  @$params['id_proprietario'];
+        $palavra_chave       =  @$params['palavra_chave'];
+        $estacao             =  @$params['estacao'];
+        $central             =  @$params['central'];
+        $tipo_gestacao       =  @$params['tipo_gestacao'];
+        $situacao_prenhez    =  @$params['situacao_prenhez'];
+        $situacao_nascimento =  @$params['situacao_nascimento'];
+        $ordenacao           =  @$params['ordenacao'];
+
+        if (!@$id_proprietario || !@$tipo_gestacao || !@$situacao_nascimento || !@$situacao_prenhez) 
+        return json_encode(["codigo" => false, "status" => false, "message" => "Parâmetros inválidos ou faltantes!", "data" => ""]);
+        
+        try {
+            // Define a Estação de Monta
+            $filtro_estacao = " tab_cobricoes.data_cobertura BETWEEN " . intevalo_datas_estacoes_monta($estacao) . " AND ";
+            
+            // Define o Tipo de Gestação
+            $filtro_gestacao = (int)$tipo_gestacao == 1 ? "": ""; //todos
+            $filtro_gestacao = (int)$tipo_gestacao == 2 ? " tab_cobricoes.id_te = '17' AND ": $filtro_gestacao; // Gestação natural
+            $filtro_gestacao = (int)$tipo_gestacao == 3 ? " tab_cobricoes.id_te = '18' AND ": $filtro_gestacao; // TE
+
+            // Define o a Situação da Prenhez
+            $filtro_prenhez = (int)$situacao_prenhez == 1 ? " tab_cobricoes.id_disponibilidade = '76' AND " : ""; //todos
+            $filtro_prenhez = (int)$situacao_prenhez == 2 ? " tab_cobricoes.id_disponibilidade = '76' AND tab_toques.id_situacao_prenhez = '19' AND " : $filtro_prenhez; //positivo
+            $filtro_prenhez = (int)$situacao_prenhez == 3 ? " tab_cobricoes.id_disponibilidade = '76' AND tab_toques.id_situacao_prenhez = '20' AND " : $filtro_prenhez; //negativo
+            $filtro_prenhez = (int)$situacao_prenhez == 4 ? " (tab_cobricoes.id_disponibilidade = '76' AND tab_toques.id_situacao_prenhez = '21' OR tab_toques.id_situacao_prenhez IS NULL) AND " : $filtro_prenhez; //aguardando
+            $filtro_prenhez = (int)$situacao_prenhez == 5 ? " tab_cobricoes.id_disponibilidade = '77' AND " : $filtro_prenhez; // a coletar
+
+            // Define a Situação do Nascimento
+            $filtro_nascimento = (int)$situacao_nascimento == 1 ? "": ""; //todos
+            $filtro_nascimento = (int)$situacao_nascimento == 2 ? " NOT tab_nascimentos.id_situacao_nascimento IS NULL AND " : $filtro_nascimento; //nascidos
+            $filtro_nascimento = (int)$situacao_nascimento == 3 ? " tab_nascimentos.id_situacao_nascimento IS NULL AND ": $filtro_nascimento; //a nascer
+
+            // Define a Ordenação dos Dados
+            $ordena_dados = $ordenacao == 0 ? "ASC" : "ASC"; //default
+            $ordena_dados = $ordenacao == 1 ? "DESC" : $ordena_dados;
+
+            // Trata a Central
+            $central_reproducao = trim(@$central) == "" ? "" : " tab_central.nome_razao_social LIKE '$central' AND ";
+
+            $query_sql = 
+                        "SELECT  
+                        tab_cobricoes.id_cobricao as ID_COBRICAO, 
+                        DATE_FORMAT(tab_cobricoes.data_cobertura, '%d/%m/%Y') as DATA_COBRICAO, 
+                        CONCAT(tab_garanhao.nome, ' x ', tab_doadora.nome) as GARANHAO_DOADORA_COBRICAO, 
+                        IF(tab_cobricoes.id_te = '18', DATE_FORMAT(tab_cobricoes.data_te, '%d/%m/%Y'), '-') as DATA_TE_COBRICAO, 
+                        IF(ISNULL(tab_receptora.nome),'-',CONCAT(tab_receptora.marca, ' - ', tab_receptora.nome)) as NOME_RECEPTORA_COBRICAO, 
+                        (CASE WHEN tab_toques.id_situacao_prenhez IS NULL THEN 'SEM TOQUE' ELSE CONCAT(UPPER(tab_situacao_toque.descricao),' ',DATE_FORMAT(tab_toques.data_toque,'%d/%m/%Y')) END) as TOQUE_COBRICAO, 
+                        IF((tab_toques.id_situacao_prenhez = '19' AND ISNULL(tab_nascimentos.id_nascimento)),CONCAT(DATEDIFF(CURDATE(), tab_cobricoes.data_cobertura), ' Dia(s)'),CONCAT('Nasceu: ',UPPER(tab_nascimentos.nome),' ',IF(tab_nascimentos.id_sexo = '2','(M)','(F)'))) as DIAS_GESTACAO_COBRICAO,
+                        tab_central.nome_razao_social as NOME_CENTRAL_COBRICAO, 
+                        tab_tipos_cobricoes.descricao as TIPO_COBRICAO,
+                        (
+                            CASE 
+                                WHEN tab_toques.id_situacao_prenhez IS NULL OR tab_toques.id_situacao_prenhez = '21' THEN '1' -- Sem Toque
+                                WHEN tab_toques.id_situacao_prenhez = '19' THEN '2' -- Positivo
+                                WHEN tab_toques.id_situacao_prenhez = '20' THEN '3' -- Negativo
+                            END
+                        ) as ID_TIPO_TOQUE_COBRICAO, 
+                        UPPER(tab_situacoes.descricao) as SITUACAO_COBRICAO, 
+                        IF(ISNULL(tab_situacao_sexagens.descricao),'SEM SEXAGEM',UPPER(tab_situacao_sexagens.descricao)) as SEXAGEM_COBRICAO, 
+                        IF(ISNULL(tab_comunicacoes_cobricao_associacao.protocolo_comunicacao),'SEM COMUNICAÇÃO',CONCAT(tab_comunicacoes_cobricao_associacao.protocolo_comunicacao,IF((NOT tab_comunicacoes_cobricao_associacao.id_receptora_comunicacao = tab_cobricoes.id_animal_receptora AND NOT tab_comunicacoes_cobricao_associacao.id_receptora_comunicacao IS NULL),CONCAT(' - ', UPPER(tab_receptora_comunicacao.nome)),''))) as PROTOCOLO_COMUNICACAO_COBRICAO,
+                        IF(ISNULL(tab_nascimentos.id_nascimento),'SEM NASCIMENTO',CONCAT(UPPER(tab_nascimentos.nome),' ',IF(tab_nascimentos.id_sexo = '2','(M)','(F)'))) as NASCIMENTO_COBRICAO,
+                        tab_toques.id_situacao_prenhez AS ID_SITUACAO_PRENHEZ,
+                        (
+                            CASE 
+                                WHEN tab_toques.id_situacao_prenhez IS NULL OR tab_toques.id_situacao_prenhez = '21' THEN '4' -- Sem Toque
+                                WHEN tab_toques.id_situacao_prenhez = '19' THEN '2' -- Positivo
+                                WHEN tab_toques.id_situacao_prenhez = '20' THEN '3' -- Negativo
+                                WHEN tab_cobricoes.id_disponibilidade = '77' THEN '5' -- A coletar
+                            END
+                        ) as TIPO_SITUACAO_PRENHEZ,
+                        (
+                            CASE 
+                                WHEN NOT tab_nascimentos.id_situacao_nascimento IS NULL THEN '2' -- nascidos
+                                WHEN tab_nascimentos.id_situacao_nascimento IS NULL THEN '3' -- Há nascer
+                            END
+                        ) as SITUACAO_NASCIMENTO,
+                        (
+                            CASE 
+                                WHEN tab_cobricoes.id_te = '17' THEN '2' -- Gestação Natural
+                                WHEN tab_cobricoes.id_te = '18' THEN '3' -- TE
+                            END
+                        ) as ID_TIPO_GESTACAO
+                    FROM tab_cobricoes  
+                        JOIN tab_animais AS tab_garanhao ON tab_garanhao.id_animal = tab_cobricoes.id_animal_macho  
+                        JOIN tab_animais AS tab_doadora ON tab_doadora.id_animal = tab_cobricoes.id_animal_femea  
+                        LEFT JOIN tab_animais AS tab_receptora ON tab_receptora.id_animal = tab_cobricoes.id_animal_receptora
+                        JOIN tab_tipos_cobricoes ON tab_tipos_cobricoes.id_tipo_cobricao = tab_cobricoes.id_tipo_cobricao
+                        JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao   
+                        JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_cobricoes.id_situacao  
+                        LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao  
+                        LEFT JOIN tab_situacoes AS tab_situacao_toque ON tab_situacao_toque.id_situacao = tab_toques.id_situacao_prenhez  
+                        LEFT JOIN tab_sexagens ON tab_sexagens.id_cobricao_relacionada = tab_cobricoes.id_cobricao  
+                        LEFT JOIN tab_situacoes AS tab_situacao_sexagens ON tab_situacao_sexagens.id_situacao = tab_sexagens.id_resultado_sexagem  
+                        LEFT JOIN tab_comunicacoes_cobricao_associacao ON tab_comunicacoes_cobricao_associacao.id_cobricao_relacionada = tab_cobricoes.id_cobricao  
+                        LEFT JOIN tab_animais AS tab_receptora_comunicacao ON tab_receptora_comunicacao.id_animal = tab_comunicacoes_cobricao_associacao.id_receptora_comunicacao 
+                        LEFT JOIN tab_nascimentos ON tab_nascimentos.id_cobricao = tab_cobricoes.id_cobricao
+                    WHERE
+                        $filtro_estacao
+                        $filtro_gestacao
+                        $filtro_prenhez
+                        $filtro_nascimento
+                        $central_reproducao
+                        ( 
+                            tab_garanhao.nome LIKE '%$palavra_chave%' OR   
+                            tab_doadora.nome LIKE '%$palavra_chave%' OR
+                            tab_receptora.nome LIKE '%$palavra_chave%' OR
+                            tab_receptora.marca LIKE '%$palavra_chave%' OR
+                            tab_cobricoes.informacoes_diversas LIKE '%$palavra_chave%'                
+                        ) AND
+                        tab_cobricoes.id_usuario_sistema = '$id_proprietario' AND
+                        tab_cobricoes.id_situacao = '1' 
+                    GROUP BY tab_cobricoes.id_cobricao
+                    ORDER BY tab_cobricoes.data_cobertura $ordena_dados";
+
+            $pdo = $this->conn->conectar();
+            $res = $pdo->query($query_sql);
+
+            $res->execute();
+
+            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);    
+            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhuma Cobrição foi localizada!", "data" => ""]);
+            
+            $sem_toque = 0;
+            $positivo = 0;
+            $negativo = 0;
+            $nascido = 0;
+            $nao_nascido = 0;
+            $sem_sexagem = 0;
+            $sexado_macho = 0;
+            $sexado_femea = 0;
+            foreach ($retorno as $key => $value) {
+                // Soma os Embriões Sem Toque
+                trim($value['TOQUE_COBRICAO']) == "SEM TOQUE" ? $sem_toque++ : $sem_toque;
+
+                // Soma os Embriões Sem Toque
+                strpos($value['TOQUE_COBRICAO'], "POSITIVO") === 0 ? $positivo++ : $positivo;
+                
+                // Soma os Embriões com Toque Negativo
+                strpos($value['TOQUE_COBRICAO'], "NEGATIVO") === 0 ? $negativo++ : $negativo;
+                
+                // Soma os Embriões Nascidos e não Nascidos
+                trim($value['NASCIMENTO_COBRICAO'] == "SEM NASCIMENTO") ? $nao_nascido++ : $nascido++;
+                
+                // Soma os Embriões Sexados de Macho, Fêmea e Sem Sexagem
+                trim($value['SEXAGEM_COBRICAO'] == "SEM SEXAGEM") ? $sem_sexagem++ : $sem_sexagem;
+                trim($value['SEXAGEM_COBRICAO'] == "MACHO") ? $sexado_macho++ : $sexado_macho;
+                trim($value['SEXAGEM_COBRICAO'] == "FÊMEA") ? $sexado_femea++ : $sexado_femea;
+
+                //Acrescenta contador
+                $retorno[$key]['CONTADOR'] =  $key+1;
+             }
+             $somatorio = [
+                "TOTAL_GERAL_COBRICOES" => (int)$key+1,
+                "AGUARDANDO_TOQUE" => (int)$sem_toque,
+                "TOQUE_POSITIVO" => (int)$positivo,
+                "TOQUE_NEGATIVO" => (int)$negativo,
+                "SEM_SEXAGEM" => (int)$sem_sexagem,
+                "SEXADO_MACHO" => (int)$sexado_macho,
+                "SEXADO_FEMEA" => (int)$sexado_femea,
+                "NASCIDOS" => (int)$nascido,
+                "NAO_NASCIDOS" => (int)$nao_nascido,
+                "ESTACAO_MONTA" => get_estacao_monta($estacao) 
+            ];
+             $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno,"estacao" => $estacao, "RESUMO" => $somatorio];
+            return json_encode($resposta);
+        } catch (\Throwable $th) {
+            throw new Exception($th);
+        }
+        
+    }
+    public function listar_nascimentos(ServerRequestInterface $request)
+    {
+        $params = (array)$request->getParsedBody();
+        $id_proprietario     =  @$params['id_proprietario'];
+        $palavra_chave       =  @$params['palavra_chave'];
+        $estacao             =  @$params['estacao'];
+        $situacao_produto    =  @$params['situacao_produto'];
+   
+
+        if (!@$id_proprietario || !@$situacao_produto) 
+        return json_encode(["codigo" => false, "status" => false, "message" => "Parâmetros inválidos ou faltantes!", "data" => ""]);
+        
+        try {
+             // Não permite que a estação seja menor que 0
+            $estacao = $estacao <= 0 ? 0 : $estacao;
+
+            // Define a Estação de Monta
+            $filtro_estacao = " tab_cobricoes.data_cobertura BETWEEN " . intevalo_datas_estacoes_monta($estacao) . " AND ";
+
+            // Define a Situação do Produto
+            $filtro_situacao = (int)$situacao_produto == 3 ? "" : "" ;
+            $filtro_situacao = (int)$situacao_produto == 1 ? " tab_nascimentos.id_situacao_nascimento = '26' AND " : $filtro_situacao;
+            $filtro_situacao = (int)$situacao_produto == 2 ? " tab_nascimentos.id_situacao_nascimento = '27' AND " : $filtro_situacao;
+            
+            $query_sql = 
+                        "SELECT  
+                        tab_nascimentos.id_nascimento as ID_NASCIMENTO,
+                        tab_cobricoes.id_cobricao as ID_COBERTURA_NASCIMENTO, 
+                        tab_nascimentos.id_animal_plantel as ID_ANIMAL_PLANETEL_NASCIMENTO, 
+                        DATE_FORMAT(tab_nascimentos.data_nascimento, '%d/%m/%Y') as DATA_NASCIMENTO,
+                        CONCAT(DATEDIFF(tab_nascimentos.data_nascimento, tab_cobricoes.data_cobertura), ' Dia(s)') as DIAS_GESTACAO_NASCIMENTO,  
+                        tab_nascimentos.nome as NOME_PRODUTO_NASCIMENTO, 
+                        UPPER(tab_nascimentos.marca) as MARCA_PRODUTO_NASCIMENTO,  
+                        UPPER(tab_sexos.sexo_animal) as SEXO_PRODUTO_NASCIMENTO, 
+                        UPPER(tab_situacoes.descricao) as SITUACAO_VIDA_NASCIMENTO,  
+                        tab_garanhao.nome as PAI_PRODUTO_NASCIMENTO, 
+                        tab_doadora.nome as MAE_PRODUTO_NASCIMENTO,  
+                        CONCAT(IF(tab_receptora.marca IS NULL OR tab_receptora.marca = '','',CONCAT(tab_receptora.marca,' - ')), tab_receptora.nome) as RECEPTORA_PRODUTO_NASCIMENTO,  
+                        IF(ISNULL(tab_comunicacoes_cobricao_associacao.protocolo_comunicacao),'-',tab_comunicacoes_cobricao_associacao.protocolo_comunicacao) as COMUNICACAO_COBRICAO_NASCIMENTO,  
+                        IF(ISNULL(tab_comunicacoes_nascimento_associacao.protocolo_comunicacao),'-',tab_comunicacoes_nascimento_associacao.protocolo_comunicacao) as COMUNICACAO_NASCIMENTO_NASCIMENTO,  
+                        tab_nascimentos.informacoes_diversas as INFORMACOES_NASCIMENTO ,
+                        tab_situacoes.id_situacao AS ID_SITUACAO_PRODUTO  
+                    FROM tab_cobricoes  
+                        JOIN tab_nascimentos ON tab_nascimentos.id_cobricao = tab_cobricoes.id_cobricao  
+                        JOIN tab_animais AS tab_garanhao ON tab_garanhao.id_animal = tab_cobricoes.id_animal_macho  
+                        JOIN tab_animais AS tab_doadora ON tab_doadora.id_animal = tab_cobricoes.id_animal_femea  
+                        LEFT JOIN tab_animais AS tab_receptora ON tab_receptora.id_animal = tab_cobricoes.id_animal_receptora  
+                        LEFT JOIN tab_sexos ON tab_sexos.id_sexo = tab_nascimentos.id_sexo  
+                        JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_nascimentos.id_situacao_nascimento  
+                        LEFT JOIN tab_comunicacoes_cobricao_associacao ON tab_comunicacoes_cobricao_associacao.id_cobricao_relacionada = tab_cobricoes.id_cobricao  
+                        LEFT JOIN tab_comunicacoes_nascimento_associacao ON tab_comunicacoes_nascimento_associacao.id_nascimento_relacionado = tab_nascimentos.id_nascimento
+                    WHERE
+                        $filtro_estacao
+                        $filtro_situacao
+                        ( 
+                            tab_garanhao.nome LIKE '%$palavra_chave%' OR   
+                            tab_doadora.nome LIKE '%$palavra_chave%' OR
+                            tab_receptora.nome LIKE '%$palavra_chave%' OR
+                            tab_receptora.marca LIKE '%$palavra_chave%' OR
+                            tab_nascimentos.informacoes_diversas LIKE '%$palavra_chave%'                    
+                        ) AND
+                        tab_cobricoes.id_usuario_sistema = '$id_proprietario' AND
+                        tab_cobricoes.id_situacao = '1' 
+                    GROUP BY tab_nascimentos.id_nascimento
+                    ORDER BY tab_nascimentos.data_nascimento ASC";
+
+            $pdo = $this->conn->conectar();
+            $res = $pdo->query($query_sql);
+
+            $res->execute();
+
+            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);    
+            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhuma Cobrição foi localizada!", "data" => ""]);
+            
+            $total_machos = 0;
+            $total_machos_vivos = 0;
+            $total_femeas = 0;
+            $total_femeas_vivas = 0;
+            $total_machos_mortos = 0;
+            $total_femeas_mortas = 0;
+            
+            foreach ($retorno as $key => $value) {
+                
+                // Soma os Machos
+                trim($value['SEXO_PRODUTO_NASCIMENTO']) == "MACHO" ? $total_machos++ : $total_machos;
+                // Soma as Femeas
+                trim($value['SEXO_PRODUTO_NASCIMENTO']) == "FÊMEA" ? $total_femeas++ : $total_femeas;
+                // Soma os Machos Vivos
+                trim($value['SEXO_PRODUTO_NASCIMENTO']) == "MACHO" && trim($value['SITUACAO_VIDA_NASCIMENTO']) == "VIVO" ? $total_machos_vivos++ : $total_machos_vivos;
+                // Soma os Machos Mortos
+                trim($value['SEXO_PRODUTO_NASCIMENTO']) == "MACHO" && trim($value['SITUACAO_VIDA_NASCIMENTO']) == "MORTO" ? $total_machos_mortos++ : $total_machos_mortos;
+                // Soma as Fêmeas Vivas
+                trim($value['SEXO_PRODUTO_NASCIMENTO']) == "FÊMEA" && trim($value['SITUACAO_VIDA_NASCIMENTO']) == "VIVO" ? $total_femeas_vivas++ : $total_femeas_vivas;
+                // Soma as Fêmeas Mortas
+                trim($value['SEXO_PRODUTO_NASCIMENTO']) == "FÊMEA" && trim($value['SITUACAO_VIDA_NASCIMENTO']) == "MORTO" ? $total_femeas_mortas++ : $total_femeas_mortas;  
+                //Acrescenta contador
+                $retorno[$key]['CONTADOR'] =  $key+1;
+             
+            }
+             $somatorio = [
+                "TOTAL_GERAL_NASCIMENTOS" => (int)$key+1,
+                "TOTAL_MACHOS" => (int)$total_machos,
+                "TOTAL_FEMEAS" => (int)$total_femeas,
+                "MACHOS_VIVOS" => (int)$total_machos_vivos,
+                "FEMEAS_VIVAS" => (int)$total_femeas_vivas,
+                "MACHOS_MORTOS" => (int)$total_machos_mortos,
+                "FEMEAS_MORTAS" => (int)$total_femeas_mortas,
+                "TOTAL_VIVOS" => (int)$total_machos_vivos + (int)$total_femeas_vivas,
+                "TOTAL_MORTOS" => (int)$total_machos_mortos + (int)$total_femeas_mortas,
+                "ESTACAO_MONTA" => get_estacao_monta($estacao) 
+            ];
+            array_push($retorno);
+             $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno, "estacao" => $estacao, "RESUMO" => $somatorio ];
+            return json_encode($resposta, true);
+        } catch (\Throwable $th) {
+            throw new Exception($th);
+        }
+        
+    }
 }

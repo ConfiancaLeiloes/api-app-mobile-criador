@@ -1,7 +1,7 @@
 <?php
 use Psr\Http\Message\ServerRequestInterface;
 
-define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/");
+//define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/");
 class AnimaisModel
 {
     private $conn;
