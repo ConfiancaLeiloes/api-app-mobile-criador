@@ -36,7 +36,7 @@ $app->add(function (Request $request, RequestHandlerInterface $handler): Respons
 // The RoutingMiddleware should be added after our CORS middleware so routing is performed first
 $app->addRoutingMiddleware();
 $app->addBodyParsingMiddleware();
-$app->addErrorMiddleware(true, true, true);
+// $app->addErrorMiddleware(true, true, true);
 
 $app->setBasePath((function () {
     $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
@@ -73,6 +73,9 @@ require_once ('./modulos/negocios/rotas.php');
 try {
     $app->run();
 } catch (\Throwable $th) {
-    //print_r($app->run());
-    exit(json_encode(["resposta" => "Erro, página não encontrada.."]));
+    # print_r($app->run());
+    
+    @header("Status: 500 Rota não encontrada");
+    @header("Content-type: application/json; charset=utf-8");
+    exit(erro("Erro, rota não encontrada.."));
 }

@@ -393,8 +393,8 @@ class UsuarioModel
 				'1',   -- GRATUITO PARA TESTAR [id_plano_adesao]
     		'106', -- EM EXPERIÊNCIA [id_situacao_assinatura]
 
-				:nome_razao_social,
-				:nome_propriedade_fazenda,
+				upper(:nome_razao_social),
+				upper(:nome_propriedade_fazenda),
 				
 				:rg_ie,
 				:CPF_CNPJ,
@@ -408,10 +408,10 @@ class UsuarioModel
 				:id_cidade,
 
 				:cep,
-				:Numero,
-				:bairro,
-				:logradouro,
-				:complemento,
+				upper(:Numero),
+				upper(:bairro),
+				upper(:logradouro),
+				upper(:complemento),
 
 				-- [data_limite_licenca] -> 5 DIAS A PARTIR DA DATA DO CADASTRO',
 				DATE_ADD(curdate(), INTERVAL 5 DAY),
@@ -419,7 +419,7 @@ class UsuarioModel
 				-- [informacoes_diversas]
 				'Usuário cadastrado via API do App Mobile',
 
-				'1', -- [id_situacao] -> PROVISÓRIO
+				'1', -- ATIVO [id_situacao] -> PROVISÓRIO
 				CURDATE(),
 				CURDATE(),
 				'1', -- [ID_USUARIO_CRIACAO] -> PROVISÓRIO
@@ -583,14 +583,21 @@ class UsuarioModel
 		} # foreach
 		
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		# E-MAIL(S)
+		$mensagem = "
+			<b>UM NOVO CADASTRO FOI REALIZADO PELO APLICATIVO</b>:
+			<br> Nome: {$usuario->nome_razao_social}
+			<br> Documento: {$usuario->CPF_CNPJ}
+			<br> E-mail: {$usuario->email_usuario}
+			<br> Celular: {$usuario->telefone_celular}
+		";
 		
-		# E-MAILS (??)
+		!@dispara_email($mensagem, 'NOVO CADASTRO', EMAIL_DEV);
+		// !@dispara_email($mensagem, 'NOVO CADASTRO', EMAIL_CONFIANCA);
 		
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		if ( !modo_dev() ) {
-			$connect->commit();
-		}
+		$connect->commit();
 		return sucesso("CADASTRO REALIZADO COM SUCESSO!" . (modo_dev() ? " - [$id_user_adicionado]" : ''), [$usuario], 201);
 	}
 

@@ -310,3 +310,46 @@ function get_estacao_monta($id_estacao)
   
 }
 
+
+// Função para obter o ID da Estação de Monta pela Data
+function estacao_monta($data_estacao)
+{
+
+  //Analisa a Data para Determinar a Estação
+  if (strtotime($data_estacao) >= strtotime("2013-07-01") && strtotime($data_estacao) <= strtotime("2014-06-30")){
+    return 1; //2013/2014
+  }else if (strtotime($data_estacao) >= strtotime("2014-07-01") && strtotime($data_estacao) <= strtotime("2015-06-30")){
+    return 2; //2014/2015
+  }else if (strtotime($data_estacao) >= strtotime("2015-07-01") && strtotime($data_estacao) <= strtotime("2016-06-30")){
+    return 3; //2015/2016
+  }else if (strtotime($data_estacao) >= strtotime("2016-07-01") && strtotime($data_estacao) <= strtotime("2017-06-30")){
+    return 4; //2016/2017
+  }else if (strtotime($data_estacao) >= strtotime("2017-07-01") && strtotime($data_estacao) <= strtotime("2018-06-30")){
+    return 5; //2017/2018
+  }else if (strtotime($data_estacao) >= strtotime("2018-07-01") && strtotime($data_estacao) <= strtotime("2019-06-30")){
+    return 6; //2018/2019
+  }else if (strtotime($data_estacao) >= strtotime("2019-07-01") && strtotime($data_estacao) <= strtotime("2020-06-30")){
+    return 7; //2019/2020
+  }else if (strtotime($data_estacao) >= strtotime("2020-07-01") && strtotime($data_estacao) <= strtotime("2021-06-30")){
+    return 8; //2020/2021
+  }else if (strtotime($data_estacao) >= strtotime("2021-07-01") && strtotime($data_estacao) <= strtotime("2022-06-30")){
+    return 9; //2021/2022
+  }else if (strtotime($data_estacao) >= strtotime("2022-07-01") && strtotime($data_estacao) <= strtotime("2023-06-30")){
+    return 10; //2022/2023
+  }else if (strtotime($data_estacao) >= strtotime("2023-07-01") && strtotime($data_estacao) <= strtotime("2024-06-30")){
+    return 11; //2023/2024
+  }else if (strtotime($data_estacao) >= strtotime("2024-07-01") && strtotime($data_estacao) <= strtotime("2025-06-30")){
+    return 12; //2024/2025
+  }else if (strtotime($data_estacao) >= strtotime("2025-07-01") && strtotime($data_estacao) <= strtotime("2026-06-30")){
+    return 13; //2025/2026
+  }else if (strtotime($data_estacao) >= strtotime("2026-07-01") && strtotime($data_estacao) <= strtotime("2027-06-30")){
+    return 14; //2026/2027
+  }else if (strtotime($data_estacao) >= strtotime("2027-07-01") && strtotime($data_estacao) <= strtotime("2028-06-30")){
+    return 15; //2027/2028
+  }else if (strtotime($data_estacao) >= strtotime("2028-07-01") && strtotime($data_estacao) <= strtotime("2029-06-30")){
+    return 16; //2028/2029
+  }else if (strtotime($data_estacao) >= strtotime("2029-07-01") && strtotime($data_estacao) <= strtotime("2030-06-30")){
+    return 17; //2029/2030
+  }
+
+}

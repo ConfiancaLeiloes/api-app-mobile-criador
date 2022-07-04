@@ -15,6 +15,9 @@ define('HORA_ATUAL', $HORA_ATUAL);
 
 define('DATA_HORA_ATUAL', $DATA_ATUAL .' '. $HORA_ATUAL);
 
+define('EMAIL_DEV', 'toninhofulldev@gmail.com');
+define('EMAIL_CONFIANCA', 'contato@confiancaleiloes.digital');
+
 define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/");
 
 

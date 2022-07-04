@@ -8,6 +8,9 @@
  * @return 
 */
 function modo_dev() {
+
+  // return false;
+
   return
     isset($_GET['debug']) ||
     isset($_GET['modo_dev']) ||
@@ -252,6 +255,8 @@ function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remeten
 	$MENSAGEM 				  = trim($MENSAGEM);
 	$email_remetente    = trim($email_remetente);
 	$email_destinatário = trim($email_destinatário);
+
+  $email_remetente = !vazio($email_remetente) ? $email_remetente : EMAIL_CONFIANCA;
 
 	# VERIFICA SE ALGUM PARAMETRO VEIO VAZIO;
 	if ( 
