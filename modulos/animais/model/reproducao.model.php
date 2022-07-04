@@ -92,19 +92,13 @@ class ReproducaoModel
             $res = $pdo->prepare($query_sql);
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->bindValue(':ID_COBRICAO', $id_cobricao);
+            $res->execute();
 
-            if(!$res) {
-                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
-            }
-            if( !$res->execute() ) {
-                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
-            }
-            if ( $res->rowCount() <= 0 ) {
-                return sucesso("Nenhnuma cobrição ou proprietário encontrado");
-            }
             
-            return sucesso("Cobrições encontradas: {$res->rowCount()} ",["dados"=>$res->fetchAll(PDO::FETCH_OBJ)]);
-            
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
+                
+            if (count($dados) <= 0) return  erro("Cobrição ou Proprietário com identificação incorreta!");
+            return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -160,21 +154,13 @@ class ReproducaoModel
             $res = $pdo->prepare($query_sql);
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->bindValue(':ID_NASCIMENTO', $id_nascimento);
-            
-            if(!$res) {
-                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
-            }
-            if( !$res->execute() ) {
-                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
-            }
-            if ( $res->rowCount() <= 0 ) {
-                return sucesso("Nenhnuma nascimento identificado");
-            }
-            
-            return sucesso("{$res->rowCount()} nascimento(s) identificado(s)",["dados"=>$res->fetchAll(PDO::FETCH_OBJ)]);
-                        
+            $res->execute();
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
+                
+            if (count($dados) <= 0) return erro("Nascimento ou Proprietário com identificação incorreta!");
+                return sucesso("", ["dados" => $dados]);                
         } catch (\Throwable $th) {
-            return throw new Exception($th);
+            throw new Exception($th);
         }
         
     }
@@ -206,17 +192,11 @@ class ReproducaoModel
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-                
-            if(!$res) {
-                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
-            }
-            if( !$res->execute() ) {
-                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
-            }
-            if ( $res->rowCount() <= 0 ) {
-                return sucesso("Nenhum Nome foi localizado!");
-            }
+            $res->execute();
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
+                
+            if (count($dados) <= 0) return erro("Nenhum Nome foi localizado!");
+            
             foreach ($dados as $key => $value) {
                 //Acrescenta contador
                 $dados[$key]['CONTADOR'] =  $key+1;
@@ -259,17 +239,10 @@ class ReproducaoModel
             $res = $pdo->prepare($query_sql);
 
             $res->bindValue(":ID_PROPRIETARIO", $id_proprietario);
+            $res->execute();
 
-            if(!$res) {
-                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
-            }
-            if( !$res->execute() ) {
-                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
-            }
-            if ( $res->rowCount() <= 0 ) {
-                return sucesso("Nenhuma Central de Reprodução foi localizada!");
-            }
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
+            if (count($dados) <= 0) return erro("Nenhuma Central de Reprodução foi localizada!");
             $totalizador = 0;
             foreach ($dados as $key => $value) {
                 // Consulta as Estações por Centrais
@@ -300,8 +273,7 @@ class ReproducaoModel
                 $dados[$key]['CONTADOR'] =  $key+1;
              }
              $somatorio = ["TOTAL_COBRICOES_CENTRAIS" => $totalizador];
-             
-            return sucesso("Total de cobrições: $totalizador", ["dados"=> $dados, "resumo"=>$somatorio]);
+            return sucesso("", ["dados"=> $dados, "resumo"=>$somatorio]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -428,17 +400,11 @@ class ReproducaoModel
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-            
-            if(!$res) {
-                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
-            }
-            if( !$res->execute() ) {
-                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
-            }
-            if ( $res->rowCount() <= 0 ) {
-                return sucesso("Nenhuma Cobrição foi localizada!");
-            }
+
+            $res->execute();
+
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
+            if (count($dados) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhuma Cobrição foi localizada!", "data" => ""]);
             
             $sem_toque = 0;
             $positivo = 0;
@@ -469,7 +435,6 @@ class ReproducaoModel
                 //Acrescenta contador
                 $dados[$key]['CONTADOR'] =  $key+1;
              }
-             $total_geral_cobricoes = (int)$key+1;
              $somatorio = [
                 "TOTAL_GERAL_COBRICOES" => (int)$key+1,
                 "AGUARDANDO_TOQUE" => (int)$sem_toque,
@@ -482,7 +447,7 @@ class ReproducaoModel
                 "NAO_NASCIDOS" => (int)$nao_nascido,
                 "ESTACAO_MONTA" => get_estacao_monta($estacao) 
             ];
-            return sucesso("Total Geral Cobrições:  $total_geral_cobricoes", ["dados"=> $dados, "resumo"=> $somatorio, "estacao"=> $estacao]);
+            return sucesso("", ["dados"=> $dados, "resumo"=> $somatorio, "estacao"=> $estacao]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -556,17 +521,11 @@ class ReproducaoModel
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-            
-            if(!$res) {
-                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
-            }
-            if( !$res->execute() ) {
-                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
-            }
-            if ( $res->rowCount() <= 0 ) {
-                return sucesso("Nenhum Nascimento foi localizado!");
-            }
+
+            $res->execute();
+
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
+            if (count($dados) <= 0) return erro("Nenhuma Cobrição foi localizada!");
             
             $total_machos = 0;
             $total_machos_vivos = 0;
@@ -593,7 +552,6 @@ class ReproducaoModel
                 $dados[$key]['CONTADOR'] =  $key+1;
              
             }
-            $total_geral_nascimentos = (int)$key+1;
              $somatorio = [
                 "TOTAL_GERAL_NASCIMENTOS" => (int)$key+1,
                 "TOTAL_MACHOS" => (int)$total_machos,
@@ -607,7 +565,7 @@ class ReproducaoModel
                 "ESTACAO_MONTA" => get_estacao_monta($estacao) 
             ];
             array_push($dados);
-            return sucesso("Total geral de nascimentos: $total_geral_nascimentos", ["dados"=> $dados, "resumo"=> $somatorio, "estacao"=> $estacao]);
+            return sucesso("", ["dados"=> $dados, "resumo"=> $somatorio, "estacao"=> $estacao]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -888,17 +846,11 @@ class ReproducaoModel
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-            
-            if(!$res) {
-                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
-            }
-            if( !$res->execute() ) {
-                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
-            }
-            if ( $res->rowCount() <= 0 ) {
-                return sucesso("Nenhuma Programação de Monta foi localizada!");
-            }
+
+            $res->execute();
+
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
+            if (count($dados) <= 0) return erro("Nenhuma Programação de Monta foi localizada!");
             
             $embrioes_previstos = 0;
             $embrioes_confirmados = 0;
@@ -934,7 +886,6 @@ class ReproducaoModel
                 $dados[$key]['CONTADOR'] =  $key+1;
              
             }
-            $total_geral_programacoes = (int)$key+1;
              $somatorio = [
                 "TOTAL_GERAL_PROGRAMACOES" => (int)$key+1,
                 "TOTAL_EMBRIOES_PREVISTOS" => (int)$embrioes_previstos,
@@ -942,7 +893,7 @@ class ReproducaoModel
                 "ESTACAO_MONTA" => get_estacao_monta($estacao) 
             ];
             array_push($dados);
-            return sucesso("Total Geral de Programações: $total_geral_programacoes", ["dados"=> $dados, "resumo"=> $somatorio]);
+            return sucesso("", ["dados"=> $dados, "resumo"=> $somatorio]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
