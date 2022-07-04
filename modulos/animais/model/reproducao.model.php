@@ -15,7 +15,7 @@ class ReproducaoModel
         $id_cobricao        = @$params['id_cobricao'];
 
         if (!@$id_proprietario || !@$id_cobricao) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Cobertura ou Proprietário com identificação incorreta!", "data" => ""]);
+            return erro("Cobertura ou Proprietário com identificação incorreta!");
         
         try {
 
@@ -92,14 +92,19 @@ class ReproducaoModel
             $res = $pdo->prepare($query_sql);
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->bindValue(':ID_COBRICAO', $id_cobricao);
-            $res->execute();
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
-                
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Cobrição ou Proprietário com identificação incorreta!", "data" => ""]);
-            $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
 
-                
-            return json_encode($resposta);
+            if(!$res) {
+                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
+            }
+            if( !$res->execute() ) {
+                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
+            }
+            if ( $res->rowCount() <= 0 ) {
+                return sucesso("Nenhnuma cobrição ou proprietário encontrado");
+            }
+            
+            return sucesso("Cobrições encontradas: {$res->rowCount()} ",["dados"=>$res->fetchAll(PDO::FETCH_OBJ)]);
+            
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -113,7 +118,7 @@ class ReproducaoModel
         $id_nascimento        = @$params['id_nascimento'];
 
         if (!@$id_proprietario || !@$id_nascimento) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Nascimento ou Proprietário com identificação incorreta!", "data" => ""]);
+            return erro("Nascimento ou Proprietário com identificação incorreta!");
         
         try {
 
@@ -155,16 +160,21 @@ class ReproducaoModel
             $res = $pdo->prepare($query_sql);
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->bindValue(':ID_NASCIMENTO', $id_nascimento);
-            $res->execute();
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
-                
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nascimento ou Proprietário com identificação incorreta!", "data" => ""]);
-            $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
-
-                
-            return json_encode($resposta);
+            
+            if(!$res) {
+                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
+            }
+            if( !$res->execute() ) {
+                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
+            }
+            if ( $res->rowCount() <= 0 ) {
+                return sucesso("Nenhnuma nascimento identificado");
+            }
+            
+            return sucesso("{$res->rowCount()} nascimento(s) identificado(s)",["dados"=>$res->fetchAll(PDO::FETCH_OBJ)]);
+                        
         } catch (\Throwable $th) {
-            throw new Exception($th);
+            return throw new Exception($th);
         }
         
     }
@@ -176,7 +186,7 @@ class ReproducaoModel
         $letra_alfabeto     = @$params['letra_alfabeto'];
 
         if (!trim(@$sexo) || !trim(@$letra_alfabeto) ) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Parâmetros inválidos ou faltantes!", "data" => ""]);
+            return erro("Parâmetros inválidos ou faltantes!");
         
         try {
 
@@ -196,18 +206,23 @@ class ReproducaoModel
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-            $res->execute();
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
                 
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum Nome foi localizado!", "data" => ""]);
-            
-            foreach ($retorno as $key => $value) {
+            if(!$res) {
+                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
+            }
+            if( !$res->execute() ) {
+                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
+            }
+            if ( $res->rowCount() <= 0 ) {
+                return sucesso("Nenhum Nome foi localizado!");
+            }
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($dados as $key => $value) {
                 //Acrescenta contador
-                $retorno[$key]['CONTADOR'] =  $key+1;
+                $dados[$key]['CONTADOR'] =  $key+1;
              }
              $contador = ($key +1);
-             $resposta = ["codigo" => true, "status" => "sucesso", "message" => "Foram encontrados '$contador' nomes com a letra '$letra_alfabeto'!", "data" => $retorno];
-            return json_encode($resposta);
+             return sucesso( "Foram encontrados '$contador' nomes com a letra '$letra_alfabeto'!", ["dados"=> $dados]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -219,7 +234,7 @@ class ReproducaoModel
         $id_proprietario = @$params['id_proprietario'];
 
         if (!@$id_proprietario) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Parâmetros inválidos ou faltantes!", "data" => ""]);
+        return erro("Parâmetros inválidos ou faltantes!");
         
         try {
 
@@ -244,12 +259,19 @@ class ReproducaoModel
             $res = $pdo->prepare($query_sql);
 
             $res->bindValue(":ID_PROPRIETARIO", $id_proprietario);
-            $res->execute();
 
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);    
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhuma Central de Reprodução foi localizada!", "data" => ""]);
+            if(!$res) {
+                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
+            }
+            if( !$res->execute() ) {
+                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
+            }
+            if ( $res->rowCount() <= 0 ) {
+                return sucesso("Nenhuma Central de Reprodução foi localizada!");
+            }
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
             $totalizador = 0;
-            foreach ($retorno as $key => $value) {
+            foreach ($dados as $key => $value) {
                 // Consulta as Estações por Centrais
                 $query_estacoes = 
                 "SELECT 
@@ -273,13 +295,13 @@ class ReproducaoModel
                 
                 // Faz o Somatório dos Resumo
                 $totalizador += $value['TOTAL_COBRICAOES_CENTRAL'];
-                $retorno[$key]['ESTACOES'] = $dados_estacoes;
+                $dados[$key]['ESTACOES'] = $dados_estacoes;
                 //Acrescenta contador
-                $retorno[$key]['CONTADOR'] =  $key+1;
+                $dados[$key]['CONTADOR'] =  $key+1;
              }
              $somatorio = ["TOTAL_COBRICOES_CENTRAIS" => $totalizador];
-             $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno,"RESUMO" => $somatorio];
-            return json_encode($resposta);
+             
+            return sucesso("Total de cobrições: $totalizador", ["dados"=> $dados, "resumo"=>$somatorio]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -299,7 +321,7 @@ class ReproducaoModel
         $ordenacao           =  @$params['ordenacao'];
 
         if (!@$id_proprietario || !@$tipo_gestacao || !@$situacao_nascimento || !@$situacao_prenhez) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Parâmetros inválidos ou faltantes!", "data" => ""]);
+        return erro("Parâmetros inválidos ou faltantes!");
         
         try {
             // Define a Estação de Monta
@@ -406,11 +428,17 @@ class ReproducaoModel
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-
-            $res->execute();
-
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);    
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhuma Cobrição foi localizada!", "data" => ""]);
+            
+            if(!$res) {
+                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
+            }
+            if( !$res->execute() ) {
+                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
+            }
+            if ( $res->rowCount() <= 0 ) {
+                return sucesso("Nenhuma Cobrição foi localizada!");
+            }
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
             
             $sem_toque = 0;
             $positivo = 0;
@@ -420,7 +448,7 @@ class ReproducaoModel
             $sem_sexagem = 0;
             $sexado_macho = 0;
             $sexado_femea = 0;
-            foreach ($retorno as $key => $value) {
+            foreach ($dados as $key => $value) {
                 // Soma os Embriões Sem Toque
                 trim($value['TOQUE_COBRICAO']) == "SEM TOQUE" ? $sem_toque++ : $sem_toque;
 
@@ -439,8 +467,9 @@ class ReproducaoModel
                 trim($value['SEXAGEM_COBRICAO'] == "FÊMEA") ? $sexado_femea++ : $sexado_femea;
 
                 //Acrescenta contador
-                $retorno[$key]['CONTADOR'] =  $key+1;
+                $dados[$key]['CONTADOR'] =  $key+1;
              }
+             $total_geral_cobricoes = (int)$key+1;
              $somatorio = [
                 "TOTAL_GERAL_COBRICOES" => (int)$key+1,
                 "AGUARDANDO_TOQUE" => (int)$sem_toque,
@@ -453,8 +482,7 @@ class ReproducaoModel
                 "NAO_NASCIDOS" => (int)$nao_nascido,
                 "ESTACAO_MONTA" => get_estacao_monta($estacao) 
             ];
-             $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno,"estacao" => $estacao, "RESUMO" => $somatorio];
-            return json_encode($resposta);
+            return sucesso("Total Geral Cobrições:  $total_geral_cobricoes", ["dados"=> $dados, "resumo"=> $somatorio, "estacao"=> $estacao]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -470,7 +498,7 @@ class ReproducaoModel
    
 
         if (!@$id_proprietario || !@$situacao_produto) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Parâmetros inválidos ou faltantes!", "data" => ""]);
+        return erro( "Parâmetros inválidos ou faltantes!");
         
         try {
              // Não permite que a estação seja menor que 0
@@ -528,11 +556,17 @@ class ReproducaoModel
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-
-            $res->execute();
-
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);    
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhuma Cobrição foi localizada!", "data" => ""]);
+            
+            if(!$res) {
+                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
+            }
+            if( !$res->execute() ) {
+                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
+            }
+            if ( $res->rowCount() <= 0 ) {
+                return sucesso("Nenhum Nascimento foi localizado!");
+            }
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
             
             $total_machos = 0;
             $total_machos_vivos = 0;
@@ -541,7 +575,7 @@ class ReproducaoModel
             $total_machos_mortos = 0;
             $total_femeas_mortas = 0;
             
-            foreach ($retorno as $key => $value) {
+            foreach ($dados as $key => $value) {
                 
                 // Soma os Machos
                 trim($value['SEXO_PRODUTO_NASCIMENTO']) == "MACHO" ? $total_machos++ : $total_machos;
@@ -556,9 +590,10 @@ class ReproducaoModel
                 // Soma as Fêmeas Mortas
                 trim($value['SEXO_PRODUTO_NASCIMENTO']) == "FÊMEA" && trim($value['SITUACAO_VIDA_NASCIMENTO']) == "MORTO" ? $total_femeas_mortas++ : $total_femeas_mortas;  
                 //Acrescenta contador
-                $retorno[$key]['CONTADOR'] =  $key+1;
+                $dados[$key]['CONTADOR'] =  $key+1;
              
             }
+            $total_geral_nascimentos = (int)$key+1;
              $somatorio = [
                 "TOTAL_GERAL_NASCIMENTOS" => (int)$key+1,
                 "TOTAL_MACHOS" => (int)$total_machos,
@@ -571,9 +606,343 @@ class ReproducaoModel
                 "TOTAL_MORTOS" => (int)$total_machos_mortos + (int)$total_femeas_mortas,
                 "ESTACAO_MONTA" => get_estacao_monta($estacao) 
             ];
-            array_push($retorno);
-             $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno, "estacao" => $estacao, "RESUMO" => $somatorio ];
-            return json_encode($resposta, true);
+            array_push($dados);
+            return sucesso("Total geral de nascimentos: $total_geral_nascimentos", ["dados"=> $dados, "resumo"=> $somatorio, "estacao"=> $estacao]);
+        } catch (\Throwable $th) {
+            throw new Exception($th);
+        }
+        
+    }
+    public function listar_programacao_monta(ServerRequestInterface $request)
+    {
+        $params = (array)$request->getParsedBody();
+        $id_proprietario     =  @$params['id_proprietario'];
+        $palavra_chave       =  @$params['palavra_chave'];
+        $estacao             =  @$params['estacao'];
+        $central             =  @$params['central'];
+        $metodo_reprodutivo  =  @$params['metodo_reprodutivo'];
+   
+
+        if (!@$id_proprietario || !@$metodo_reprodutivo || !isset($estacao)) 
+        return erro("Parâmetros inválidos ou faltantes!");
+        
+        try {
+            $estacao = $estacao == "" ? 0 : $estacao;
+             // Não permite que a estação seja menor que 0
+            $estacao = $estacao == 0 ? estacao_monta(date('Y-m-d')) - 1 : $estacao;
+            $filtro_data_cobertura =  $estacao == 0 ? " '1900-01-01' AND '2200-12-31'" : " " . intevalo_datas_estacoes_monta($estacao);
+            // Define a Estação de Monta
+            $filtro_estacao = " tab_cobricoes.data_cobertura BETWEEN " . intevalo_datas_estacoes_monta($estacao) . " AND ";
+            // Não permite que a estação seja menor que 1
+            $estacao = $estacao < 1 ? 1 : $estacao;
+
+            // Define a Estação de Monta
+            $filtro_estacao = " tab_programa_monta.id_estacao_monta = '$estacao' AND ";
+            
+            
+            // Define a Situação do Produto
+            $filtro_metodo = (int)$metodo_reprodutivo == 1 ? "" : "" ;
+            $filtro_metodo = (int)$metodo_reprodutivo == 2 ? " tab_programa_monta.id_situacao_emprenhar = '78' AND " : $filtro_metodo;
+            $filtro_metodo = (int)$metodo_reprodutivo == 3 ? " tab_programa_monta.id_situacao_emprenhar = '79' AND " : $filtro_metodo;
+            
+            $query_sql = 
+                        "SELECT *,
+                        (
+                            PREVISTO_01_PROGRAMA +
+                            PREVISTO_02_PROGRAMA +
+                            PREVISTO_03_PROGRAMA +
+                            PREVISTO_04_PROGRAMA +
+                            PREVISTO_05_PROGRAMA +
+                            PREVISTO_06_PROGRAMA +
+                            PREVISTO_07_PROGRAMA +
+                            PREVISTO_08_PROGRAMA +
+                            PREVISTO_09_PROGRAMA +
+                            PREVISTO_10_PROGRAMA                    
+                        ) as TOTAL_PREVISTO_PROGRAMA,
+                        (
+                            CONFIRMADOS_01_PROGRAMA +
+                            CONFIRMADOS_02_PROGRAMA +
+                            CONFIRMADOS_03_PROGRAMA +
+                            CONFIRMADOS_04_PROGRAMA +
+                            CONFIRMADOS_05_PROGRAMA +
+                            CONFIRMADOS_06_PROGRAMA +
+                            CONFIRMADOS_07_PROGRAMA +
+                            CONFIRMADOS_08_PROGRAMA +
+                            CONFIRMADOS_09_PROGRAMA +
+                            CONFIRMADOS_10_PROGRAMA
+                        ) as TOTAL_CONFIRMADO_PROGRAMA
+                        FROM
+                    ( 
+                        SELECT  
+                        tab_programa_monta.id_cruzamento_previsto AS ID_PROGRAMA,  
+                        tab_programa_monta.id_estacao_monta AS ID_ESTACAO_PROGRAMA,  
+                        tab_estacao_monta.estacao AS ESTACAO_PROGRAMA, 
+                        tab_doadora_matriz.id_animal AS ID_DOADORA_MATRIZ_PROGRAMA,  
+                        tab_doadora_matriz.nome AS NOME_DOADORA_MATRIZ_PROGRAMA,
+                        tab_central.nome_razao_social AS NOME_CENTRAL_PROGRAMA,  
+                        UPPER(tab_situacao_emprenhar.descricao) AS SITUACAO_EMPRENHAR_PROGRAMA,        
+                        UPPER(tab_prioridades.descricao) AS PRIORIDADE_EMBRIAO_PROGRAMA,   
+                        tab_garanhao1.nome AS NOME_GARANHAO_01_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_01 AS PREVISTO_01_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao   
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao1.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'   
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'
+                                AND tab_central.nome_razao_social LIKE '%$central%' 
+                        ) AS CONFIRMADOS_01_PROGRAMA,  
+                        tab_garanhao2.nome AS NOME_GARANHAO_02_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_02 AS PREVISTO_02_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes 
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao  
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao2.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19' AND NOT tab_toques.id_situacao_prenhez IS NULL  
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea  
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%' 
+                        ) AS CONFIRMADOS_02_PROGRAMA,  
+                        tab_garanhao3.nome AS NOME_GARANHAO_03_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_03 AS PREVISTO_03_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes 
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao  
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao3.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'  
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%'
+                        ) AS CONFIRMADOS_03_PROGRAMA,   
+                        tab_garanhao4.nome AS NOME_GARANHAO_04_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_04 AS PREVISTO_04_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes 
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao 
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao4.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'   
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%' 
+                        ) AS CONFIRMADOS_04_PROGRAMA,   
+                        tab_garanhao5.nome AS NOME_GARANHAO_05_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_05 AS PREVISTO_05_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes 
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao  
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao5.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'   
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%'
+                        ) AS CONFIRMADOS_05_PROGRAMA,   
+                        tab_garanhao6.nome AS NOME_GARANHAO_06_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_06 AS PREVISTO_06_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao   
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao6.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'   
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%'
+                        ) AS CONFIRMADOS_06_PROGRAMA,   
+                        tab_garanhao7.nome AS NOME_GARANHAO_07_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_07 AS PREVISTO_07_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes 
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao  
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao7.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'   
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%' 
+                        ) AS CONFIRMADOS_07_PROGRAMA,   
+                        tab_garanhao8.nome AS NOME_GARANHAO_08_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_08 AS PREVISTO_08_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes 
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao  
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao8.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'   
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%' 
+                        ) AS CONFIRMADOS_08_PROGRAMA,   
+                        tab_garanhao9.nome AS NOME_GARANHAO_09_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_09 AS PREVISTO_09_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes 
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao  
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao9.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'   
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%'
+                        ) AS CONFIRMADOS_09_PROGRAMA,    
+                        tab_garanhao10.nome AS NOME_GARANHAO_10_PROGRAMA,  
+                        tab_programa_monta.previsto_garanhao_10 AS PREVISTO_10_PROGRAMA,  
+                        (  
+                            SELECT  
+                                COUNT(tab_cobricoes.id_cobricao)   
+                            FROM tab_cobricoes 
+                                JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_cobricoes.id_central_reproducao  
+                                LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao   
+                            WHERE  
+                                tab_cobricoes.id_animal_macho = tab_garanhao10.id_animal   
+                                AND tab_cobricoes.data_cobertura BETWEEN $filtro_data_cobertura
+                                AND tab_toques.id_situacao_prenhez = '19'   
+                                AND tab_cobricoes.id_animal_femea = tab_programa_monta.id_animal_femea   
+                                AND tab_cobricoes.id_disponibilidade = '76'  
+                                AND tab_central.nome_razao_social LIKE '%$central%'
+                        ) AS CONFIRMADOS_10_PROGRAMA,
+                        (  
+                            tab_programa_monta.previsto_garanhao_01 + 
+                            tab_programa_monta.previsto_garanhao_02 + 
+                            tab_programa_monta.previsto_garanhao_03 +  
+                            tab_programa_monta.previsto_garanhao_04 + 
+                            tab_programa_monta.previsto_garanhao_05 + 
+                            tab_programa_monta.previsto_garanhao_06 + 
+                            tab_programa_monta.previsto_garanhao_07 + 
+                            tab_programa_monta.previsto_garanhao_08 + 
+                            tab_programa_monta.previsto_garanhao_09 + 
+                            tab_programa_monta.previsto_garanhao_10  
+                        ) AS TOTAL_EMBRIOES_PREVISTOS,
+                        tab_programa_monta.informacoes_diversas AS INFORMACAO_PROGRAMA   
+                    FROM tab_programa_monta   
+                        JOIN tab_pessoas AS tab_central ON tab_central.id_pessoa = tab_programa_monta.id_central_reproducao   
+                        JOIN tab_situacoes AS tab_prioridades ON tab_prioridades.id_situacao = tab_programa_monta.id_prioridade  
+                        JOIN tab_situacoes AS tab_situacao_emprenhar ON tab_situacao_emprenhar.id_situacao = tab_programa_monta.id_situacao_emprenhar 
+                        JOIN tab_animais AS tab_doadora_matriz ON tab_doadora_matriz.id_animal = tab_programa_monta.id_animal_femea
+                        JOIN tab_estacao_monta ON tab_estacao_monta.id_estacao_monta = tab_programa_monta.id_estacao_monta 
+                        LEFT JOIN tab_animais AS tab_garanhao1 ON tab_garanhao1.id_animal = tab_programa_monta.id_garanhao_01   
+                        LEFT JOIN tab_animais AS tab_garanhao2 ON tab_garanhao2.id_animal = tab_programa_monta.id_garanhao_02   
+                        LEFT JOIN tab_animais AS tab_garanhao3 ON tab_garanhao3.id_animal = tab_programa_monta.id_garanhao_03   
+                        LEFT JOIN tab_animais AS tab_garanhao4 ON tab_garanhao4.id_animal = tab_programa_monta.id_garanhao_04  
+                        LEFT JOIN tab_animais AS tab_garanhao5 ON tab_garanhao5.id_animal = tab_programa_monta.id_garanhao_05  
+                        LEFT JOIN tab_animais AS tab_garanhao6 ON tab_garanhao6.id_animal = tab_programa_monta.id_garanhao_06   
+                        LEFT JOIN tab_animais AS tab_garanhao7 ON tab_garanhao7.id_animal = tab_programa_monta.id_garanhao_07   
+                        LEFT JOIN tab_animais AS tab_garanhao8 ON tab_garanhao8.id_animal = tab_programa_monta.id_garanhao_08   
+                        LEFT JOIN tab_animais AS tab_garanhao9 ON tab_garanhao9.id_animal = tab_programa_monta.id_garanhao_09   
+                        LEFT JOIN tab_animais AS tab_garanhao10 ON tab_garanhao10.id_animal = tab_programa_monta.id_garanhao_10
+                    WHERE  
+                        $filtro_estacao 
+                        $filtro_metodo 
+                        tab_programa_monta.id_usuario_sistema = '$id_proprietario' AND   
+                        (  
+                            tab_doadora_matriz.nome LIKE '%$palavra_chave%' OR  
+                            tab_programa_monta.informacoes_diversas LIKE '%$palavra_chave%'  
+                        ) AND
+                        (
+                            tab_central.nome_razao_social LIKE '%$central%'
+                        )  
+                    GROUP BY tab_programa_monta.id_cruzamento_previsto   
+                    ORDER BY tab_doadora_matriz.nome ASC
+                ) as tab_programacao_monta_app";
+
+            $pdo = $this->conn->conectar();
+            $res = $pdo->query($query_sql);
+            
+            if(!$res) {
+                return erro("Erro: {$pdo->errno} - {$pdo->error}", 500);
+            }
+            if( !$res->execute() ) {
+                return erro("Erro - Código #". $res->errorInfo()[modo_dev() ? 2 : 1], 500);
+            }
+            if ( $res->rowCount() <= 0 ) {
+                return sucesso("Nenhuma Programação de Monta foi localizada!");
+            }
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
+            
+            $embrioes_previstos = 0;
+            $embrioes_confirmados = 0;
+            foreach ($dados as $key => $value) {
+                
+                // Soma os Embriões Previstos
+                $embrioes_previstos += 
+                $value['PREVISTO_01_PROGRAMA'] +
+                $value['PREVISTO_02_PROGRAMA'] +
+                $value['PREVISTO_03_PROGRAMA'] +
+                $value['PREVISTO_04_PROGRAMA'] +
+                $value['PREVISTO_05_PROGRAMA'] +
+                $value['PREVISTO_06_PROGRAMA'] +
+                $value['PREVISTO_07_PROGRAMA'] +
+                $value['PREVISTO_08_PROGRAMA'] +
+                $value['PREVISTO_09_PROGRAMA'] +
+                $value['PREVISTO_10_PROGRAMA'];
+
+                // Soma os Embriões Confirmados
+                $embrioes_confirmados +=
+                $value['CONFIRMADOS_01_PROGRAMA'] +
+                $value['CONFIRMADOS_02_PROGRAMA'] +
+                $value['CONFIRMADOS_03_PROGRAMA'] +
+                $value['CONFIRMADOS_04_PROGRAMA'] +
+                $value['CONFIRMADOS_05_PROGRAMA'] +
+                $value['CONFIRMADOS_06_PROGRAMA'] +
+                $value['CONFIRMADOS_07_PROGRAMA'] +
+                $value['CONFIRMADOS_08_PROGRAMA'] +
+                $value['CONFIRMADOS_09_PROGRAMA'] +
+                $value['CONFIRMADOS_10_PROGRAMA'];
+
+                //Acrescenta contador
+                $dados[$key]['CONTADOR'] =  $key+1;
+             
+            }
+            $total_geral_programacoes = (int)$key+1;
+             $somatorio = [
+                "TOTAL_GERAL_PROGRAMACOES" => (int)$key+1,
+                "TOTAL_EMBRIOES_PREVISTOS" => (int)$embrioes_previstos,
+                "TOTAL_EMBRIOES_CONFIRMADOS" => (int)$embrioes_confirmados,
+                "ESTACAO_MONTA" => get_estacao_monta($estacao) 
+            ];
+            array_push($dados);
+            return sucesso("Total Geral de Programações: $total_geral_programacoes", ["dados"=> $dados, "resumo"=> $somatorio]);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }

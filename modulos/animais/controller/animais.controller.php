@@ -26,7 +26,7 @@ class AnimaisController
 
         $resultado = $this->animais->detalhes_animal_cobricoes($request);
         $response->getBody()->write($resultado);
-        return $response->withStatus(200)->withHeader('Content-type', 'application/json');
+        return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
        
     }
     public function detalhes_animal_exames(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -107,5 +107,14 @@ class AnimaisController
         $response->getBody()->write($resultado);
         return $response->withStatus(200)->withHeader('Content-type', 'application/json');
        
+    }
+
+
+
+    public function cadastro(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $res = $this->animais->cadastro($request);
+        $response->getBody()->write($res);
+        return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
     }
 }

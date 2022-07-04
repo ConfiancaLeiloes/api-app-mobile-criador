@@ -120,6 +120,10 @@ function body_params() {
   
   $objeto = @json_decode(file_get_contents('php://input'), true);
 
+  if ( empty($objeto) ) {
+    $objeto = $_POST;
+  }
+
   foreach ($objeto as $nome_campo => $valor) {
     $objeto[$nome_campo] = trim($valor);
   }
@@ -225,4 +229,76 @@ function valida_token($id_modulo = 0) {
   }
   
   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remetente = 'contato@confiancaleiloes.digital') {
+  
+	# APLICANDO TRIM NOS PARÂMETROS
+	$assunto 			      = trim($assunto);
+	$MENSAGEM 				  = trim($MENSAGEM);
+	$email_remetente    = trim($email_remetente);
+	$email_destinatário = trim($email_destinatário);
+
+  $email_remetente = !vazio($email_remetente) ? $email_remetente : EMAIL_CONFIANCA;
+
+	# VERIFICA SE ALGUM PARAMETRO VEIO VAZIO;
+	if ( 
+    vazio($assunto)
+    || vazio($MENSAGEM)
+    
+    || vazio($email_remetente)
+    || vazio($email_destinatário)
+
+    || !valida_email($email_remetente)
+    || !valida_email($email_destinatário)
+  ) {
+		return false;
+	}
+
+
+	// CORPO DO E-MAIL
+  $corpo_email = 
+  "<html>
+    <body style='background:#f2f2f2 !important; padding-top: 10px !important; padding-bottom: 10px !important; font-family:sans-serif !important;'>
+      <div style='width:800px !important; margin:50px auto !important; background:#fff;'>
+        <br>
+        
+        <div style='min-height: 220px !important; padding:20px !important; text-align:center !important;'>
+          $MENSAGEM
+        </div>
+
+      </div>
+    </body>
+  </html>
+  ";
+  
+  #  TurboSMTP
+  require PATH_CDN  . '/php/services/TurboSMTP/TurboApiClient.php'; 
+
+  $email = new Email();
+  $email->setFrom($email_remetente); # E-mail de Origem
+
+  $email->setToList($email_destinatário); # E-MAIL DO REMETENTE
+  $email->setSubject($assunto); # Assunto do E-mail
+  $email->setHtmlContent($corpo_email); // Conteúdo em HTML
+
+  // Login no TurboSMTP
+  $turboApiClient = new TurboApiClient("contato@agrobold.com.br", "Nb6zzDwM");
+  $response = $turboApiClient->sendEmail($email); // Envia o E-mail e recebe o retorno do Servidor TurboSMTP
+
+  return $response['message'] == 'OK';
 }

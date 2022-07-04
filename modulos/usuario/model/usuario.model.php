@@ -393,8 +393,8 @@ class UsuarioModel
 				'1',   -- GRATUITO PARA TESTAR [id_plano_adesao]
     		'106', -- EM EXPERIÊNCIA [id_situacao_assinatura]
 
-				:nome_razao_social,
-				:nome_propriedade_fazenda,
+				upper(:nome_razao_social),
+				upper(:nome_propriedade_fazenda),
 				
 				:rg_ie,
 				:CPF_CNPJ,
@@ -408,10 +408,10 @@ class UsuarioModel
 				:id_cidade,
 
 				:cep,
-				:Numero,
-				:bairro,
-				:logradouro,
-				:complemento,
+				upper(:Numero),
+				upper(:bairro),
+				upper(:logradouro),
+				upper(:complemento),
 
 				-- [data_limite_licenca] -> 5 DIAS A PARTIR DA DATA DO CADASTRO',
 				DATE_ADD(curdate(), INTERVAL 5 DAY),
@@ -419,7 +419,7 @@ class UsuarioModel
 				-- [informacoes_diversas]
 				'Usuário cadastrado via API do App Mobile',
 
-				'1', -- [id_situacao] -> PROVISÓRIO
+				'1', -- ATIVO [id_situacao] -> PROVISÓRIO
 				CURDATE(),
 				CURDATE(),
 				'1', -- [ID_USUARIO_CRIACAO] -> PROVISÓRIO
@@ -583,14 +583,21 @@ class UsuarioModel
 		} # foreach
 		
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		# E-MAIL(S)
+		$mensagem = "
+			<b>UM NOVO CADASTRO FOI REALIZADO PELO APLICATIVO</b>:
+			<br> Nome: {$usuario->nome_razao_social}
+			<br> Documento: {$usuario->CPF_CNPJ}
+			<br> E-mail: {$usuario->email_usuario}
+			<br> Celular: {$usuario->telefone_celular}
+		";
 		
-		# E-MAILS (??)
+		!@dispara_email($mensagem, 'NOVO CADASTRO', EMAIL_DEV);
+		// !@dispara_email($mensagem, 'NOVO CADASTRO', EMAIL_CONFIANCA);
 		
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		if ( !modo_dev() ) {
-			$connect->commit();
-		}
+		$connect->commit();
 		return sucesso("CADASTRO REALIZADO COM SUCESSO!" . (modo_dev() ? " - [$id_user_adicionado]" : ''), [$usuario], 201);
 	}
 
@@ -752,11 +759,21 @@ class UsuarioModel
 
 		# PESQUISANDO O E-MAIL NO BANCO
 		$query =
-		"	SELECT * FROM tab_pessoas
+		"	SELECT 
+				tab_pessoas.email_usuario,
+				tab_pessoas.id_pessoa AS ID_USUARIO,
+				tab_pessoas.nome_razao_social AS NOME_USUARIO
+			FROM tab_fazendas_usuario 
+			JOIN tab_pessoas ON tab_pessoas.id_pessoa = tab_fazendas_usuario.id_usuario
+			JOIN tab_pessoas AS tab_proprietario ON (
+				tab_proprietario.id_pessoa = tab_fazendas_usuario.id_fazenda 
+			)
 			WHERE (
-				lower(email_usuario) = :email
+				length(tab_pessoas.email_usuario) > 5
+				AND tab_pessoas.email_usuario = :email
 			)
 		";
+
 		$stmt = $connect->prepare($query);
 		if(!$stmt) {
 			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
@@ -768,13 +785,55 @@ class UsuarioModel
 			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
 		}
 		if ( $stmt->rowCount() <= 0 ) {
-			return erro("E-mail '{$get->email}' não encontrado! Verifique e tente novamente.", 404);
+			return erro("Nenhum usuário com o e-mail '{$get->email}' encontrado! Verifique e tente novamente.", 404);
 		}
 		if ( $stmt->rowCount() > 1 ) {
 			return erro("Cadastro em duplicidade com o e-mail '{$get->email}'! Entre em contato com a Confiança!", 409);
 		}
 
-		return erro("REC SENHA Em desenvolvimento...");
-	}
+		$usuario = $stmt->fetch(PDO::FETCH_OBJ);
 
-}
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		$query_update =
+		"	UPDATE tab_pessoas SET
+				token_login_app = null,
+				senha_usuario = :nova_senha
+			WHERE (
+				id_pessoa = :id_usuario AND
+				email_usuario = :email
+			)
+		";
+		
+		$stmt = $connect->prepare($query_update);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+	
+		$NOVA_SENHA = rand(100000, 999999);
+
+		$stmt->bindParam(':id_usuario', $usuario->ID_USUARIO);
+		$stmt->bindParam(':nova_senha', $NOVA_SENHA);
+		$stmt->bindParam(':email', $get->email);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			return erro("Erro ao gerar nova senha!");
+		}
+
+		# DISPARANDO O E-MAIL
+		$MENSAGEM = 'MENSAGEM TESTE DE ENVIO DE E-MAIL';
+		if ( !@dispara_email($MENSAGEM, 'RECUPERAÇÃO DE SENHA', $get->email) ) {
+			return erro("Erro ao disparar e-mail");
+		}
+		
+		return sucesso("Uma nova senha foi gerada e enviada ao seu e-mail!");
+		
+	} # recuperar_senha()
+
+
+
+} # class UsuarioModel

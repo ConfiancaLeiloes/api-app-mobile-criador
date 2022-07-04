@@ -15,7 +15,13 @@ define('HORA_ATUAL', $HORA_ATUAL);
 
 define('DATA_HORA_ATUAL', $DATA_ATUAL .' '. $HORA_ATUAL);
 
+define('EMAIL_DEV', 'toninhofulldev@gmail.com');
+define('EMAIL_CONFIANCA', 'contato@confiancaleiloes.digital');
+
 define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/");
+
+
+define('PATH_CDN', '/home/wwgrup/cdn');
 
 // $DB_MYSQL   = 'gc_confianca_criador';
 // $HOST_MYSQL = 'confiancacriador.digital';
