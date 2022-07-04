@@ -19,3 +19,6 @@ require_once __DIR__.'/modulos/negocios/controller/cliente.controller.php';
 
 // require_once __DIR__.'/modulos/usuario/model/usuario.model.php';
 // require_once __DIR__.'/modulos/usuario/controller/usuario.controller.php';
+
+require_once __DIR__.'/modulos/usuario/model/usuario.model.php';
+require_once __DIR__.'/modulos/usuario/controller/usuario.controller.php';

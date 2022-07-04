@@ -8,19 +8,6 @@ class AnimaisModel
     public function __construct($conn = null) {
        $this->conn = new ConexaoModel();
     }
-     /**
-     * Método index
-     * @author Iago Oliveira <iagooliveira09@outlook.com>
-     * @return 
-     */
-    public function index()
-    {  
-        $pdo = $this->conn->conectar();
-        $res = $pdo->query("SELECT COUNT(*) from tab_animais");
-
-        $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
-        return json_encode(["mensagem" => "Hello confianca", "Conexão com o BD: " => $retorno]);
-    }
 
     /**
      * PLANTEL
@@ -31,7 +18,7 @@ class AnimaisModel
         $id_animal = $params['id_animal'];
         $id_proprietario = $params['id_proprietario'];
 
-        if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => "2","status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!", []);
         try {
             $query_sql = 
                         "SELECT  
@@ -79,14 +66,12 @@ class AnimaisModel
 
                 $pdo = $this->conn->conectar();
                 $res = $pdo->query($query_sql);
-                $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+                $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum animal foi localizado!", "data" => ""]);
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
+                if (count($dados) <= 0) return erro("Nenhum animal foi localizado!", []);
 
-                
-                return json_encode($resposta);
+                return sucesso("",$dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -98,7 +83,7 @@ class AnimaisModel
         $id_animal = $params['id_animal'];
         $id_proprietario = $params['id_proprietario'];
 
-        if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => "2","status" => false, "message" => "Animal ou Haras com identificação incorreta!", "data" => ""]);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Haras com identificação incorreta!", []);
         try {
             $query_sql = 
                         "SELECT  
@@ -122,14 +107,12 @@ class AnimaisModel
 
                 $pdo = $this->conn->conectar();
                 $res = $pdo->query($query_sql);
-                $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+                $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum Exame foi localizado!", "data" => ""]);
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
-
+                if (count($dados) <= 0) return erro("Nenhum Exame foi localizado!", []);
                 
-                return json_encode($resposta);
+                return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -142,7 +125,7 @@ class AnimaisModel
         $id_proprietario = $params['id_proprietario'];
         $url_fotos = URL_FOTOS;
 
-        if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => "2","status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!");
         try {
             $query_sql = 
                         "SELECT  
@@ -181,19 +164,19 @@ class AnimaisModel
                 $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
 
                 $res->execute();
-                $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+                $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum animal foi localizado!", "data" => ""]);
+                if (count($dados) <= 0) return erro("Nenhum animal foi localizado!", []);
                 
                 $total_machos = 0;
                 $total_femeas = 0;
-                foreach ($retorno as $key => $value) {
+                foreach ($dados as $key => $value) {
                     // Soma os Animais
                 trim($value['SEXO_ANIMAL']) == "MACHO" ? $total_machos++ : $total_femeas++;
 
                 //Acrescenta contador
-                $retorno[$key]['CONTADOR'] =  $key+1;
+                $dados[$key]['CONTADOR'] =  $key+1;
                 }
 
                 // Monta o Array do Somatório
@@ -203,11 +186,9 @@ class AnimaisModel
                     "TOTAL_FEMEAS" => (int)$total_femeas
                 ];
 
+                $dados["RESUMO"] = $somatorio;
                 
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno, "RESUMO" => $somatorio];
-
-                
-                return json_encode($resposta);
+                return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -218,7 +199,7 @@ class AnimaisModel
         $params = (array)$request->getParsedBody();
         $id_animal = $params['id_animal'];
 
-        if (!$id_animal) return json_encode(["codigo" => "2","status" => false, "message" => "Animal com identificação incorreta!", "data" => ""]);
+        if (!$id_animal) return erro("Animal com identificação incorreta!", []);
         try {
             $query_sql = 
                         "SELECT 
@@ -245,14 +226,12 @@ class AnimaisModel
 
                 $pdo = $this->conn->conectar();
                 $res = $pdo->query($query_sql);
-                $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+                $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Animal com identificação incorreta!", "data" => ""]);
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
+                if (count($dados) <= 0) return erro("Animal com identificação incorreta!");
 
-                
-                return json_encode($resposta);
+                return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -264,7 +243,7 @@ class AnimaisModel
         $id_animal          = $params['id_animal'];
         $id_proprietario    = $params['id_proprietario'];
 
-        if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => false, "status" => false, "message" => "Animal ou Haras com identificação incorreta!", "data" => ""]);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Haras com identificação incorreta!", []);
         try {
             $query_sql = 
                         "SELECT  
@@ -291,14 +270,12 @@ class AnimaisModel
 
                 $pdo = $this->conn->conectar();
                 $res = $pdo->query($query_sql);
-                $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+                $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhuma Movimentação foi localizada!", "data" => ""]);
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
+                if (count($dados) <= 0) return erro("Nenhuma Movimentação foi localizada!", []);
 
-                
-                return json_encode($resposta);
+                return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -310,7 +287,8 @@ class AnimaisModel
         $id_animal          = $params['id_animal'];
         $id_proprietario    = $params['id_proprietario'];
 
-        if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => false, "status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!");
+    
         try {
             $query_sql = 
                         "SELECT  
@@ -378,14 +356,12 @@ class AnimaisModel
                 $res->bindValue(':ID_ANIMAL', $id_animal);
                 $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
                 $res->execute();            
-                $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+                $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
-
+                if (count($dados) <= 0) return erro("Animal ou Proprietário com identificação incorreta!", []);
                 
-                return json_encode($resposta);
+                return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -398,7 +374,8 @@ class AnimaisModel
         $id_proprietario    = $params['id_proprietario'];
         $url_fotos          = URL_FOTOS;
 
-        if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => false, "status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!", []);
+        
         try {
             $query_sql = 
                         "SELECT  
@@ -514,14 +491,12 @@ class AnimaisModel
                 $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
                 
                 $res->execute();            
-                $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+                $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
-
+                if (count($dados) <= 0) return erro("Animal ou Proprietário com identificação incorreta!", []);
                 
-                return json_encode($resposta);
+                return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -533,7 +508,7 @@ class AnimaisModel
         $id_animal          = $params['id_animal'];
         $id_proprietario    = $params['id_proprietario'];
 
-        if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => false, "status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!", []);
         try {
                 $query_sql = 
                         "SELECT  
@@ -559,14 +534,12 @@ class AnimaisModel
                 $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
 
                 $res->execute();
-                $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+                $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum Controle Sanitário foi localizado!", "data" => ""]);
-                $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
+                if (count($dados) <= 0) return erro("Nenhum Controle Sanitário foi localizado!", []);
 
-                
-                return json_encode($resposta);
+                return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -578,7 +551,7 @@ class AnimaisModel
         $id_animal          = $params['id_animal'];
         $id_proprietario    = $params['id_proprietario'];
 
-        if (!$id_animal || !$id_proprietario) return json_encode(["codigo" => false, "status" => false, "message" => "Animal ou Proprietário com identificação incorreta!", "data" => ""]);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!", []);
         try {
             $query_sql = 
                         "SELECT * FROM 
@@ -721,14 +694,12 @@ class AnimaisModel
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
 
             $res->execute();
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum Sócio foi localizado!", "data" => ""]);
-            $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
+            if (count($dados) <= 0) return  erro("Nenhum Sócio foi localizado!", []);
 
-                
-            return json_encode($resposta);
+            return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -748,7 +719,7 @@ class AnimaisModel
         $url_fotos = URL_FOTOS;
 
         if ((int)($id_proprietario) == 0 || (int)$grupo == 0 || (int)$tipo_baixa == 0 || (int)$sexo == 0 || (int)$situacao == 0) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Parâmetros inválidos ou faltantes!", "data" => ""]);
+            return erro("Parâmetros inválidos ou faltantes!", []);
         
         try {
 
@@ -789,7 +760,16 @@ class AnimaisModel
                         tab_animais.registro_associacao as REGISTRO_ANIMAL, 
                         UPPER(tab_situacoes.descricao) as DESCRICAO_SITUACAO_ANIMAL,  
                         IF(ISNULL(tab_socios.cotas_socio_01),'0.00',tab_socios.cotas_socio_01) as COTAS_ANIMAL,
-                        IF(tab_animais.foto_perfil_animal = 'sem_foto.jpg' OR tab_animais.foto_perfil_animal IS NULL ,null,CONCAT('$url_fotos',tab_animais.foto_perfil_animal)) as FOTO_ANIMAL 
+                        IF(tab_animais.foto_perfil_animal = 'sem_foto.jpg' OR tab_animais.foto_perfil_animal IS NULL ,null,CONCAT('$url_fotos',tab_animais.foto_perfil_animal)) as FOTO_ANIMAL,
+                        (
+                            CASE 
+                                WHEN tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 > 0 AND tab_animais.id_situacao_vida = '15' THEN '1' 
+                                WHEN tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 = 0 AND tab_compras_vendas_animais.id_situacao_negocio = '42' THEN '2'
+                                WHEN tab_animais.id_situacao_vida = '16' THEN '3'
+                                WHEN tab_animais.id_vender = '14' THEN '4'
+                                ELSE '5'
+                            END
+                        ) as TIPO_BAIXA 
                     FROM tab_animais  
                         JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_animais.id_situacao   
                         JOIN tab_sexos ON tab_sexos.id_sexo = tab_animais.id_sexo   
@@ -831,19 +811,19 @@ class AnimaisModel
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhum animal foi localizado!", "data" => ""]);
+            if (count($dados) <= 0) return  erro("Nenhum animal foi localizado!", []);
             
             //Array a ter os dados empilhados para ser convertido em JSON
             $total_machos = 0;
             $total_femeas = 0;
-            foreach ($retorno as $key => $value) {
+            foreach ($dados as $key => $value) {
                 // Soma os Animais
                trim($value['SEXO_ANIMAL']) == "MACHO" ? $total_machos++ : $total_femeas++;
 
                //Acrescenta contador
-               $retorno[$key]['CONTADOR'] =  $key+1;
+               $dados[$key]['CONTADOR'] =  $key+1;
             }
 
             // Monta o Array do Somatório
@@ -853,8 +833,8 @@ class AnimaisModel
                 "TOTAL_FEMEAS" => (int)$total_femeas
             ];
 
-            $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno, "RESUMO" => $somatorio];    
-            return json_encode($resposta);
+            $dados["RESUMO"] = $somatorio;    
+            return sucesso("", $dados);
 
         } catch (\Throwable $th) {
             throw new Exception($th);
@@ -866,8 +846,7 @@ class AnimaisModel
         $params = (array)$request->getParsedBody();
         $id_proprietario    = @$params['id_proprietario'];
 
-        if (!@$id_proprietario) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Haras com identificação incorreta!", "data" => ""]);
+        if (!@$id_proprietario) return erro("Haras com identificação incorreta!", []);
         
         try {
 
@@ -897,13 +876,11 @@ class AnimaisModel
             $res = $pdo->prepare($query_sql);
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->execute();
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Você ainda não possui nenhum animal cadastrado em seu Plantel!", "data" => ""]);
-            $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno];
-
-                
-            return json_encode($resposta);
+            if (count($dados) <= 0) return erro("Você ainda não possui nenhum animal cadastrado em seu Plantel!", []);
+                    
+            return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
@@ -915,9 +892,7 @@ class AnimaisModel
         $id_proprietario    = @$params['id_proprietario'];
         $id_raca            = @$params['id_raca'];
 
-        if (!@$id_proprietario) 
-        return json_encode(["codigo" => false, "status" => false, "message" => "Haras com identificação incorreta!", "data" => ""]);
-        
+        if (!@$id_proprietario) return erro("Haras com identificação incorreta!", []);
         try {
 
             $filtro_raca = $id_raca ? "tab_animais.id_raca = {$id_raca} AND" : ''; 
@@ -945,24 +920,24 @@ class AnimaisModel
             $res = $pdo->prepare($query_sql);
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->execute();
-            $retorno = $res->fetchAll(PDO::FETCH_ASSOC);
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
-            if (count($retorno) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Você ainda não possui nenhum animal cadastrado em seu Plantel!", "data" => ""]);
+            if (count($dados) <= 0) return erro("Você ainda não possui nenhum animal cadastrado em seu Plantel!", []);
+            //$resposta = json_encode(["codigo" => false,"status" => false, "message" => "Você ainda não possui nenhum animal cadastrado em seu Plantel!", "data" => ""]);
             
             $totalizador = 0;
-            foreach ($retorno as $key => $value) {
+            foreach ($dados as $key => $value) {
                 // Faz o Somatório dos Resumo
                 $totalizador += $value['QUANTIDADE_GRUPO'];
-                $retorno[$key]['CONTADOR'] =  $key+1;
+                $dados[$key]['CONTADOR'] =  $key+1;
             }
 
             $somatorio = [
                 "TOTAL_PLANTEL" => $totalizador
             ];
-            $resposta = ["codigo" => true, "status" => "sucesso", "message" => "", "data" => $retorno, "RESUMO" => $somatorio];
-
+            $dados['RESUMO'] = $somatorio;
                 
-            return json_encode($resposta);
+            return sucesso("", $dados);
         } catch (\Throwable $th) {
             throw new Exception($th);
         }

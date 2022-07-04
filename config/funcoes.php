@@ -8,8 +8,11 @@
  * @return 
 */
 function modo_dev() {
-  global $IP_ADRESS;
-  return isset($_GET['debug']) || isset($_GET['modo_dev']) || $_SERVER['SERVER_NAME'] == 'localhost' ? true : false;
+  return
+    isset($_GET['debug']) ||
+    isset($_GET['modo_dev']) ||
+    isset($_POST['modo_dev']) ||
+    $_SERVER['SERVER_NAME'] == 'localhost';
 }
 
 /**
@@ -19,6 +22,19 @@ function modo_dev() {
 */
 function type_request($type = '') { 
   return REQUEST_METHOD === strtoupper($type) ? true : false;
+}
+
+
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
+function uri_contem($substring) {
+  if ( strpos(REQUEST_URI, $substring) === false ) {
+    return false;
+  }
+  return true;
 }
 
 
@@ -54,22 +70,20 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   //   }
   // }
 
-  global $retorno;
+  return json_encode([
+    'codigo' => (boolean)$resultado,
+    'message' => $mensagem,
+    
+    'token_valido' => isset($_SESSION['token_valido']) ? $_SESSION['token_valido'] : true,
+    'tem_permissao' => isset($_SESSION['tem_permissao']) ? $_SESSION['tem_permissao'] : true,
+    
+    'http_status_code' => $http_status_code,
+    'modo_dev' => modo_dev(),
+    'data_hora_requisicao' => DATA_HORA_ATUAL,
+    
+    'data' => $dados
+  ]);
 
-  
-
-  $retorno->codigo  = (boolean)$resultado;
-  $retorno->message = $mensagem;
-  
-  $retorno->token_valido  = true;
-  $retorno->tem_permissao = true;
-
-  $retorno->http_status_code     = $http_status_code;
-  $retorno->modo_dev             = modo_dev();
-  $retorno->data_hora_requisicao = date('Y-m-d H:i:s');
-  $retorno->data                 = $dados;
-
-  return json_encode($retorno);
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

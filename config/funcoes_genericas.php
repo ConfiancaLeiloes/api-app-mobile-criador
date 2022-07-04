@@ -1,5 +1,48 @@
 <?php
 
+
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
+function valida_email($mail) {
+
+  $mail = strtolower( trim($mail) );
+  if(preg_match("/^([[:alnum:]_.-]){3,}@([[:lower:][:digit:]_.-]{3,})(.[[:lower:]]{2,3})(.[[:lower:]]{2})?$/", $mail)) {
+    return true;
+  }
+  return false;
+}
+
+
+
+
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
+function valida_celular($num_celular) { 
+
+  $celular = str_replace(['(', ')', ' ', '-', '+'], '', $num_celular);
+  $auxiliar = str_split($celular);
+
+  if( $auxiliar[0] == '0' ) {
+   $celular = substr($celular, 1);
+  }
+
+  // Expressão regular que verifica se o número de celular é válido
+  $regex = "#^((11|12|13|14|15|16|17|18|19|21|22|24|27|28|91|92|93|94|95|81|82|83|84|85|86|87|31|32|33|34|35|37|38|71|73|74|75|77|79|61|62|63|64|65|66|67|68|69|49|51|53|54|55)[9]{0,1}|(?!11|12|13|14|15|16|17|18|19|21|22|24|27|28|91|92|93|94|95|81|82|83|84|85|86|87|31|32|33|34|35|37|38|71|73|74|75|77|79|61|62|63|64|65|66|67|68|69|49|51|53|54|55)\d{2})[6789]\d{7}$#";
+
+  if( preg_match($regex, $celular) > 0 ) {
+    return true;
+  }
+  
+  return false;
+}
+
+
 /**
  * Função
  * @author Antonio Ferreira <@toniferreirasantos>
@@ -199,7 +242,7 @@ function cpf_cnpj_valido($cpf_cnpj) {
 
 
   return false;
-}  
+} 
 
 
 //Retorna um intervalo de Datas para ser utilizado em um BETWEEN SQL de acordo com a Estação de Monta Selecionada
@@ -266,6 +309,4 @@ function get_estacao_monta($id_estacao)
   return $estacoes[$id_estacao];
   
 }
-
-
 
