@@ -177,10 +177,10 @@ function cpf_cnpj_valido($cpf_cnpj) {
       for ($t = 9; $t < 11; $t++) {
           
         for ($d = 0, $c = 0; $c < $t; $c++) {
-          $d += $cpf_cnpj{$c} * (($t + 1) - $c);
+          $d += $cpf_cnpj[$c] * (($t + 1) - $c);
         }
         $d = ((10 * $d) % 11) % 10;
-        if ($cpf_cnpj{$c} != $d) {
+        if ($cpf_cnpj[$c] != $d) {
           return false;
         }
       }
@@ -242,5 +242,71 @@ function cpf_cnpj_valido($cpf_cnpj) {
 
 
   return false;
-}  
+} 
+
+
+//Retorna um intervalo de Datas para ser utilizado em um BETWEEN SQL de acordo com a Estação de Monta Selecionada
+function intevalo_datas_estacoes_monta($id_estacao)
+{
+  
+  //Cria o Array de Estações
+  $estacoes = array(
+    "0" => "1900/2200",
+    "1" => "2013/2014",
+    "2" => "2014/2015",
+    "3" => "2015/2016",
+    "4" => "2016/2017",
+    "5" => "2017/2018",
+    "6" => "2018/2019",
+    "7" => "2019/2020",
+    "8" => "2020/2021",
+    "9" => "2021/2022",
+    "10" => "2022/2023",
+    "11" => "2023/2024",
+    "12" => "2024/2025",
+    "13" => "2025/2026",
+    "14" => "2026/2027",
+    "15" => "2027/2028",
+    "16" => "2028/2029",
+    "17" => "2029/2030"    
+    );
+  
+  //Verifica a Estação  
+  $quebra_estacao = explode("/",$estacoes[$id_estacao]);
+
+  //Monta o Intervalo de Datas
+  return "'" . $quebra_estacao[0] . "-07-01' AND '" . $quebra_estacao[1] . "-06-30'";
+  
+}
+
+//Obtem a Estação de Monta pelo Numero informado
+function get_estacao_monta($id_estacao)
+{
+  
+  //Cria o Array de Estações
+  $estacoes = [
+    "0" => "TODAS",
+    "1" => "2013/2014",
+    "2" => "2014/2015",
+    "3" => "2015/2016",
+    "4" => "2016/2017",
+    "5" => "2017/2018",
+    "6" => "2018/2019",
+    "7" => "2019/2020",
+    "8" => "2020/2021",
+    "9" => "2021/2022",
+    "10" => "2022/2023",
+    "11" => "2023/2024",
+    "12" => "2024/2025",
+    "13" => "2025/2026",
+    "14" => "2026/2027",
+    "15" => "2027/2028",
+    "16" => "2028/2029",
+    "17" => "2029/2030"    
+  ];
+    
+  //Monta o Intervalo de Datas
+  return $estacoes[$id_estacao];
+  
+}
 

@@ -6,9 +6,9 @@ use Psr\Http\Message\ServerRequestInterface;
 class UsuarioController 
 {
 	private $usuario;
-	public function __construct($usuario)
+	public function __construct()
 	{
-		$this->$usuario = new UsuarioModel();
+		$this->usuario = new UsuarioModel();
 	}
 
 
@@ -61,7 +61,7 @@ class UsuarioController
 
 		$body->plataforma = $body->plataforma == 'ios' ? 102 : 101;
 
-		$res = $this->$usuario->login($body);
+		$res = $this->usuario->login($body);
 		$response->getBody()->write($res);
 		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');	 
 	}
@@ -72,6 +72,34 @@ class UsuarioController
 
 
 
+	
+	/**
+	 * Método
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return 
+	*/
+	public function recuperar_senha(ServerRequestInterface $request, ResponseInterface $response) {
+	// public function recuperar_senha() {
+
+		// $body = (object)$request->getParsedBody();	
+		$body = (object)$_GET;
+		
+		if ( !isset($body->email) ) {
+			return json("Campo [E-MAIL] não informado!", $response);
+		}
+
+		if ( vazio($body->email) ) {
+			return json("Informe o [E-MAIL]!", $response);
+		}
+
+		if ( !valida_email($body->email) ) {
+			return json("[E-MAIL] INVÁLIDO!", $response);
+		}
+
+		$res = $this->usuario->recuperar_senha($body);
+		$response->getBody()->write($res);
+		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');	 
+	}
 
 
 
@@ -87,7 +115,13 @@ class UsuarioController
 	// public function valida_token(ServerRequestInterface $request, ResponseInterface $response) {
 	public function valida_token() {
 		
-		$post = (object)$_POST;
+		// $post = (object)$_POST;
+		$post = body_params();
+
+		if ( modo_dev() ) {
+			print_r($objeto); exit;
+		}
+
 
 		$msg_erro = '';
 
@@ -137,7 +171,7 @@ class UsuarioController
 
 
 	/**
-	 * Método valida_token() -> Verifica a validade do token da requisição corrente
+	 * Método checa_permissao_acesso() -> Verifica se o usuário logado tem acesso a uma determinada funcionalidade 
 	 * @author Antonio Ferreira <@toniferreirasantos>
 	 * @return boolean
 	*/
@@ -150,7 +184,7 @@ class UsuarioController
 		elseif ( $id_usuario <= 0 ) {
       $msg_erro = 'Usuário não identificado!';
     }
-		elseif ( !$this->$usuario->tem_permissao_acesso($id_usuario, $id_modulo) ) {
+		elseif ( !$this->usuario->tem_permissao_acesso($id_usuario, $id_modulo) ) {
 			$msg_erro = 'Você não tem autorização para acessar este Conteúdo!';
 		}
 		
@@ -182,10 +216,10 @@ class UsuarioController
 		$this->checa_permissao_acesso($post->id_usuario, 1);
 
 		if ( (int)$post->id_pessoa <= 0 ) {
-			return json("USUÁRIO NÃO INFORMADO!", $response);
+			return json("ID DO PERFIL NÃO INFORMADO!", $response);
 		}
 
-		$res = $this->$usuario->perfil($post->id_pessoa);
+		$res = $this->usuario->perfil($post->id_pessoa);
 
 		$res = json_decode($res);
 		$usuario = $res->data[0];
@@ -227,20 +261,6 @@ class UsuarioController
 
 
 
-
-
-
-	/**
-	 * Método
-	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
-	*/
-	public function recuperar_senha(ServerRequestInterface $request, ResponseInterface $response) {
-		$res = $this->$usuario->recuperar_senha();
-		$response->getBody()->write($res);
-
-		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');	 
-	}
 
 
 
@@ -360,11 +380,12 @@ class UsuarioController
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		
 		if ( $post->id_pessoa > 0 ) {
+			$this->valida_token();
 			$this->checa_permissao_acesso($post->id_usuario, 1);
-			$res = $this->$usuario->update($post);
+			$res = $this->usuario->update($post);
 		}
 		else {
-			$res = $this->$usuario->cadastro($post);
+			$res = $this->usuario->cadastro($post);
 		}
 
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

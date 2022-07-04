@@ -52,6 +52,15 @@ $app->setBasePath((function () {
 
 //$app->get('/detalhes-animal-cobricoes', AnimaisController::class . ':detalhes_animal_cobricoes');
 
+
+if (
+    !uri_contem('/usuario/login')
+    && !uri_contem('/usuario/cadastro')
+    && !uri_contem('/usuario/recuperar_senha')
+ ) {
+	UsuarioController::valida_token();
+}
+
 # ROTAS DE ANIMAIS
 require_once ('./modulos/animais/rotas.php');
 
