@@ -100,7 +100,7 @@ class ReproducaoModel
             if (count($dados) <= 0) return  erro("Cobrição ou Proprietário com identificação incorreta!");
             return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th);
+            throw new Exception($th->getMessage(), (int)$th->getCode());
         }
         
     }
@@ -160,7 +160,7 @@ class ReproducaoModel
             if (count($dados) <= 0) return erro("Nascimento ou Proprietário com identificação incorreta!");
                 return sucesso("", ["dados" => $dados]);                
         } catch (\Throwable $th) {
-            throw new Exception($th);
+            throw new Exception($th->getMessage(), (int)$th->getCode());
         }
         
     }
@@ -204,7 +204,7 @@ class ReproducaoModel
              $contador = ($key +1);
              return sucesso( "Foram encontrados '$contador' nomes com a letra '$letra_alfabeto'!", ["dados"=> $dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th);
+            throw new Exception($th->getMessage(), (int)$th->getCode());
         }
         
     }
@@ -275,7 +275,7 @@ class ReproducaoModel
              $somatorio = ["TOTAL_COBRICOES_CENTRAIS" => $totalizador];
             return sucesso("", ["dados"=> $dados, "resumo"=>$somatorio]);
         } catch (\Throwable $th) {
-            throw new Exception($th);
+            throw new Exception($th->getMessage(), (int)$th->getCode());
         }
         
     }
@@ -449,7 +449,7 @@ class ReproducaoModel
             ];
             return sucesso("", ["dados"=> $dados, "resumo"=> $somatorio, "estacao"=> $estacao]);
         } catch (\Throwable $th) {
-            throw new Exception($th);
+            throw new Exception($th->getMessage(), (int)$th->getCode());
         }
         
     }
@@ -564,10 +564,10 @@ class ReproducaoModel
                 "TOTAL_MORTOS" => (int)$total_machos_mortos + (int)$total_femeas_mortas,
                 "ESTACAO_MONTA" => get_estacao_monta($estacao) 
             ];
-            array_push($dados);
+            @array_push($dados);
             return sucesso("", ["dados"=> $dados, "resumo"=> $somatorio, "estacao"=> $estacao]);
         } catch (\Throwable $th) {
-            throw new Exception($th);
+            throw new Exception($th->getMessage(), (int)$th->getCode());
         }
         
     }
@@ -840,15 +840,13 @@ class ReproducaoModel
                         (
                             tab_central.nome_razao_social LIKE '%$central%'
                         )  
-                    GROUP BY tab_programa_monta.id_cruzamento_previsto   
+                    GROUP BY tab_programa_monta.id_cruzamento_previsto  
                     ORDER BY tab_doadora_matriz.nome ASC
                 ) as tab_programacao_monta_app";
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
-
-            $res->execute();
-
+            $res->execute();           
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
             if (count($dados) <= 0) return erro("Nenhuma Programação de Monta foi localizada!");
             
@@ -892,10 +890,10 @@ class ReproducaoModel
                 "TOTAL_EMBRIOES_CONFIRMADOS" => (int)$embrioes_confirmados,
                 "ESTACAO_MONTA" => get_estacao_monta($estacao) 
             ];
-            array_push($dados);
+            @array_push($dados);
             return sucesso("", ["dados"=> $dados, "resumo"=> $somatorio]);
         } catch (\Throwable $th) {
-            throw new Exception($th);
+            throw new Exception($th->getMessage(), (int)$th->getCode());
         }
         
     }

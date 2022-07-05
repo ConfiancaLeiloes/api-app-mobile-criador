@@ -36,7 +36,9 @@ $app->add(function (Request $request, RequestHandlerInterface $handler): Respons
 // The RoutingMiddleware should be added after our CORS middleware so routing is performed first
 $app->addRoutingMiddleware();
 $app->addBodyParsingMiddleware();
-// $app->addErrorMiddleware(true, true, true);
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+// Get the default error handler and register my custom error renderer.
+$errorHandler = $errorMiddleware->getDefaultErrorHandler()->forceContentType('application/json');
 
 $app->setBasePath((function () {
     $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
@@ -60,21 +62,20 @@ if (
  ) {
 	UsuarioController::valida_token();
 }
-
-# ROTAS DE ANIMAIS
-require_once ('./modulos/animais/rotas.php');
-
-# ROTAS DE FINANCEIRO
-//require_once ('./modulos/financeiro/rotas.php');
-
-# ROTAS DE NEGOCIOS
-require_once ('./modulos/negocios/rotas.php');
-
 try {
+    # ROTAS DE ANIMAIS
+    require_once ('./modulos/animais/rotas.php');
+
+    # ROTAS DE FINANCEIRO
+    //require_once ('./modulos/financeiro/rotas.php');
+
+    # ROTAS DE NEGOCIOS
+    require_once ('./modulos/negocios/rotas.php');
+
+    
+
     $app->run();
 } catch (\Throwable $th) {
-    # print_r($app->run());
-    
     @header("Status: 500 Rota não encontrada");
     @header("Content-type: application/json; charset=utf-8");
     exit(erro("Erro, rota não encontrada..", 500));

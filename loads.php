@@ -14,6 +14,10 @@ require_once __DIR__.'/modulos/animais/controller/animais.controller.php';
 require_once __DIR__.'/modulos/animais/model/reproducao.model.php';
 require_once __DIR__.'/modulos/animais/controller/reproducao.controller.php';
 
+
+require_once __DIR__.'/modulos/animais/model/sanitario.model.php';
+require_once __DIR__.'/modulos/animais/controller/sanitario.controller.php';
+
 require_once __DIR__.'/modulos/negocios/model/cliente.model.php';
 require_once __DIR__.'/modulos/negocios/controller/cliente.controller.php';
 

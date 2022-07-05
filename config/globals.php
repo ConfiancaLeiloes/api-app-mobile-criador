@@ -1,5 +1,5 @@
 <?php
-
+error_reporting(null);
 $REQUEST_URI = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $request_method = strtolower($_SERVER['REQUEST_METHOD']);
 $REQUEST_METHOD = strtoupper($_SERVER['REQUEST_METHOD']);
