@@ -113,7 +113,7 @@ class UsuarioController
 	 * @return boolean
 	*/
 	// public function valida_token(ServerRequestInterface $request, ResponseInterface $response) {
-	public function valida_token() {
+	public static function valida_token() {
 		
 		// $post = (object)$_POST;
 		$post = body_params();
@@ -225,6 +225,7 @@ class UsuarioController
 		$usuario = $res->data[0];
 
 		
+		$usuario->CAMPOS_ADICIONAIS = (object)[];
 		$usuario->CAMPOS_ADICIONAIS->PRIMEIRO_NOME_USUARIO = $usuario->PRIMEIRO_NOME_USUARIO;
 		unset($usuario->PRIMEIRO_NOME_USUARIO);
 
@@ -286,7 +287,7 @@ class UsuarioController
 		$post = (object)$request->getParsedBody();
 
 		if ( isset($post->id_pessoa) && ((int)$post->id_pessoa <= 0 || is_null($post->id_pessoa) || vazio($post->id_pessoa) ) ) {
-			return json('Identificação de Usuário inválida!', $response);
+			// return json('Identificação de Usuário inválida!', $response);
 		}
 
 		# VALIDANDO {{NÃO}} CAMPOS OBRIGATÓRIOS
@@ -301,6 +302,10 @@ class UsuarioController
 
 		if ( isset($post->nascimento) && !vazio($post->nascimento) && !data_valida($post->nascimento) ) {
 			return json('Campo [DATA DE NASCIMENTO] inválida!', $response);
+		}
+
+		if ( isset($post->nascimento) && strtotime($post->nascimento) > strtotime(DATA_ATUAL) ) {
+			return json('Campo [DATA DE NASCIMENTO] inválida! (data futura)', $response);
 		}
 
 		if ( isset($post->cep) && !vazio($post->cep) ) {
@@ -379,7 +384,7 @@ class UsuarioController
 
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		
-		if ( $post->id_pessoa > 0 ) {
+		if ( (int)$post->id_pessoa > 0 ) {
 			$this->valida_token();
 			$this->checa_permissao_acesso($post->id_usuario, 1);
 			$res = $this->usuario->update($post);

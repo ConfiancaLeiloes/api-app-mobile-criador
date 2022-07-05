@@ -23,6 +23,9 @@ define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/
 
 define('PATH_CDN', '/home/wwgrup/cdn');
 
+# Caminho onde as imagens dos animais serão cadastradas
+define('PATH_UPLOAD_FOTOS', $_SERVER['DOCUMENT_ROOT'] . '/tests/imgs'); # Provisório -> Para testes
+
 // $DB_MYSQL   = 'gc_confianca_criador';
 // $HOST_MYSQL = 'confiancacriador.digital';
 // $USER_MYSQL = 'gc_criador';

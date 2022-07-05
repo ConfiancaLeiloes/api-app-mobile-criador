@@ -73,7 +73,9 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   //   }
   // }
 
-  return json_encode([
+  
+
+  $retorno = [
     'codigo' => (boolean)$resultado,
     'message' => $mensagem,
     
@@ -82,10 +84,18 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
     
     'http_status_code' => $http_status_code,
     'modo_dev' => modo_dev(),
-    'data_hora_requisicao' => DATA_HORA_ATUAL,
-    
-    'data' => $dados
-  ]);
+    'data_hora_requisicao' => DATA_HORA_ATUAL
+  ];
+
+
+  if ( isset($_SESSION['debug']) ) {
+    $retorno['debug'] = $_SESSION['debug'];
+  }
+
+  $retorno['data'] = $dados;
+
+
+  return json_encode($retorno);
 
 }
 
