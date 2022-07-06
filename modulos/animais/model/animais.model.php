@@ -1012,7 +1012,7 @@ class AnimaisModel
             if ( vazio($post->causa_morte) )  return erro('Informe a [CAUSA DA MORTE]!');
         }
 
-        if( isset($post->id_localizacao) && vazio($post->id_localizacao) ) return erro('campo [LOCALIZAÇÃO] inválido!');
+        // if( isset($post->id_localizacao) && vazio($post->id_localizacao) ) return erro('campo [LOCALIZAÇÃO] inválido!');
         if ( vazio($post->nome) ) return erro('Campo [NOME] inválido!');
         
         # DATA DE NASCIMENTO
@@ -1033,6 +1033,8 @@ class AnimaisModel
         if( isset($post->id_dna) && !in_array($post->id_dna, [74, 75]) ) return erro('campo [DNA] inválido!');
         if ( isset($post->id_consignacao) && !in_array($post->id_consignacao, [112, 113]) ) return erro('campo [CONSIGNAÇÃO] inválido!');
 
+
+        $post->id_localizacao = isset($post->id_localizacao) && !vazio($post->id_localizacao) ? $post->id_localizacao : NULL;
 
         $post->chip                 = isset($post->chip) && !vazio($post->chip) ? $post->chip                                                 : NULL;
         $post->marca                = isset($post->marca) && !vazio($post->marca) ? $post->marca                                              : 'SEM MARCA';
@@ -1257,17 +1259,16 @@ class AnimaisModel
 	*/
     private function update($post) {
 
-        
         $connect = $this->conn->conectar();
         $connect->beginTransaction();
         $query_update =
 		"   UPDATE tab_animais SET
-                id_tipo_animal       = :id_tipo_animal,
-                id_situacao          = :id_situacao,
-                id_raca              = :id_raca,
-                id_sexo              = :id_sexo,
-                id_pelagem           = :id_pelagem,
-                id_grupo             = :id_grupo,
+                id_tipo_animal = :id_tipo_animal,
+                id_situacao    = :id_situacao,
+                id_raca        = :id_raca,
+                id_sexo        = :id_sexo,
+                id_pelagem     = :id_pelagem,
+                id_grupo       = :id_grupo,
                 id_situacao_cadastro = :id_situacao_cadastro,
                 id_classificacao     = :id_classificacao,
                 id_situacao_vida     = :id_situacao_vida,
@@ -1278,21 +1279,21 @@ class AnimaisModel
                 id_mae = :id_mae,
 
                 id_situacao_macho_castrado = :id_situacao_macho_castrado,
-                id_dna                     = :id_dna,
-                id_proprietario            = :id_proprietario_animal, -- DONO DO ANIMAL
-                id_criador                 = :id_criador,
-                id_consignacao             = :id_consignacao,
-                cod_associacao             = :cod_associacao,
-                nome                       = upper(:nome),
-                data_nascimento            = :data_nascimento,
-                registro_associacao        = :registro_associacao,
-                chip                       = :chip,
-                marca                      = :marca,
-                grau_de_sangue             = :grau_de_sangue,
-                valor_mercado              = :valor_mercado,
-                informacoes_diversas       = :informacoes_diversas,
-                toe_animal                 = :toe_animal,
-                tod_animal                 = :tod_animal,
+                id_dna          = :id_dna,
+                id_proprietario = :id_proprietario_animal, -- DONO DO ANIMAL
+                id_criador      = :id_criador,
+                id_consignacao  = :id_consignacao,
+                cod_associacao  = :cod_associacao,
+                nome            = upper(:nome),
+                data_nascimento = :data_nascimento,
+                registro_associacao  = :registro_associacao,
+                chip                 = :chip,
+                marca                = :marca,
+                grau_de_sangue       = :grau_de_sangue,
+                valor_mercado        = :valor_mercado,
+                informacoes_diversas = :informacoes_diversas,
+                toe_animal           = :toe_animal,
+                tod_animal           = :tod_animal,
 
                 data_morte = :data_morte,
                 causa_morte = :causa_morte,
@@ -1395,7 +1396,6 @@ class AnimaisModel
             $foto_base64 = "data:image/jpeg;base64,{$foto_base64}";
         }
 
-        
         $nome_arquivo = 'animal_'. str_pad($id_animal, 6, '0', STR_PAD_LEFT) .'.jpg';
         
         if ( !@file_put_contents(PATH_UPLOAD_FOTOS . "/{$nome_arquivo}", file_get_contents($foto_base64)) ) {
@@ -1428,5 +1428,51 @@ class AnimaisModel
         return sucesso("Imagem cadastrada com sucesso!");
     }
 
+
+
+
+
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    /**
+	 * Método categorias()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+    public function categorias($post) {
+
+        $connect = $this->conn->conectar();
+        $query =
+		"   SELECT 
+                concat(id_grupo_animal) id_grupo_animal,
+                upper(tab_grupo_animais.descricao) AS grupo,
+                upper(tab_grupo_animais.descricao_plural) AS grupo_plural,
+                
+                concat(tab_grupo_animais.id_especie) id_especie,
+                upper(tab_especies_animais.descricao) AS especie,
+                upper(tab_especies_animais.descricao_plural) AS especie_plural
+            FROM tab_grupo_animais
+            JOIN tab_especies_animais ON tab_especies_animais.id_especie = tab_grupo_animais.id_especie
+            ORDER BY tab_grupo_animais.id_especie, ordem
+		";
+        $stmt = $connect->prepare($query);
+        if(!$stmt) {
+            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+        }
+        if( !$stmt->execute() ) {
+            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+        }
+        if ( $stmt->rowCount() <= 0 ) {   
+            return erro("Nenhum registro encontrado...");
+        }
+
+        $dados = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_OBJ) as $dado) {
+            array_push($dados, numerics_json($dado));
+        }
+        
+        // numerics_json
+        return sucesso("{$stmt->rowCount()} RESULTADOS ENCONTRADOS!", $dados);
+    }
 
 } # AnimaisModel {}

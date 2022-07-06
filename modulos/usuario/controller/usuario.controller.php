@@ -34,34 +34,7 @@ class UsuarioController
 	*/
 	public function login(ServerRequestInterface $request, ResponseInterface $response) {
 
-	
-		$body = (object)$request->getParsedBody();	
-		
-		if ( !isset($body->email) ) {
-			return json("Campo [E-MAIL] não informado!", $response);
-		}
-		if ( !isset($body->senha) ) {
-			return json("Campo [SENHA] não informado!", $response);
-		}
-
-		if ( vazio($body->email) ) {
-			return json("Informe o [E-MAIL]!", $response);
-		}
-		if ( vazio($body->senha) ) {
-			return json("Informe a [SENHA]!", $response);
-		}
-
-		if ( !valida_email($body->email) ) {
-			return json("[E-MAIL] INVÁLIDO!", $response);
-		}
-		if ( strlen($body->senha) < 4 ) {
-			return json("[SENHA] INVÁLIDA!", $response);
-		}
-
-
-		$body->plataforma = $body->plataforma == 'ios' ? 102 : 101;
-
-		$res = $this->usuario->login($body);
+		$res = $this->usuario->login($request);
 		$response->getBody()->write($res);
 		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');	 
 	}

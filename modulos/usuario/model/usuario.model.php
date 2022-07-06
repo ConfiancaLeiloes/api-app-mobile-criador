@@ -26,9 +26,36 @@ class UsuarioModel
 	/**
 	 * Método login()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
+	 * @return function
 	*/
-	public function login($login) {
+	// public function cadastro($login) {
+	public function login(ServerRequestInterface $request) {
+
+		$login = (object)$request->getParsedBody();	
+		
+		if ( !isset($login->email) ) {
+			return erro("Campo [E-MAIL] não informado!");
+		}
+		if ( !isset($login->senha) ) {
+			return erro("Campo [SENHA] não informado!");
+		}
+
+		if ( vazio($login->email) ) {
+			return erro("Informe o [E-MAIL]!");
+		}
+		if ( vazio($login->senha) ) {
+			return erro("Informe a [SENHA]!");
+		}
+
+		if ( !valida_email($login->email) ) {
+			return erro("[E-MAIL] INVÁLIDO!");
+		}
+		if ( strlen($login->senha) < 4 ) {
+			return erro("[SENHA] INVÁLIDA!");
+		}
+
+
+	
 
 		$connect = $this->conn->conectar();
 
@@ -112,6 +139,7 @@ class UsuarioModel
 		}
 
 
+		$login->plataforma = $body->plataforma == 'ios' ? 102 : 101;
 
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		# REGISTRANDO O LOG DE ACESSO
@@ -350,35 +378,35 @@ class UsuarioModel
 		$post = (object)$request->getParsedBody();
 
 		if ( isset($post->id_pessoa) && ((int)$post->id_pessoa <= 0 || is_null($post->id_pessoa) || vazio($post->id_pessoa) ) ) {
-			// return json('Identificação de Usuário inválida!', $response);
+			// return erro('Identificação de Usuário inválida!');
 		}
 
 		# VALIDANDO {{NÃO}} CAMPOS OBRIGATÓRIOS
 		if ( !vazio($post->CPF_CNPJ) ) {
 
 			if ( !cpf_cnpj_valido($post->CPF_CNPJ) ) {
-				return json('Campo [CPF / CNPJ] inválido!', $response);
+				return erro('Campo [CPF / CNPJ] inválido!');
 			}
 			
 			$post->CPF_CNPJ = somente_numeros($post->CPF_CNPJ);
 		}
 
 		if ( isset($post->nascimento) && !vazio($post->nascimento) && !data_valida($post->nascimento) ) {
-			return json('Campo [DATA DE NASCIMENTO] inválida!', $response);
+			return erro('Campo [DATA DE NASCIMENTO] inválida!');
 		}
 
 		if ( isset($post->nascimento) && strtotime($post->nascimento) > strtotime(DATA_ATUAL) ) {
-			return json('Campo [DATA DE NASCIMENTO] inválida! (data futura)', $response);
+			return erro('Campo [DATA DE NASCIMENTO] inválida! (data futura)');
 		}
 
 		if ( isset($post->cep) && !vazio($post->cep) ) {
 			if ( strlen($post->cep) < 8 ) {
-				return json("Campo [CEP] inválido!", $response);
+				return erro("Campo [CEP] inválido!");
 			}
 		}
 
 		if ( strlen($post->telefone_fixo) > 0 && strlen($post->telefone_fixo) < 8) {
-			return json('Campo [TELEFONE] inválido!', $response);
+			return erro('Campo [TELEFONE] inválido!');
 		}
 
 
@@ -396,46 +424,46 @@ class UsuarioModel
 
 
 		if ( vazio($post->nome_razao_social) ) {
-			return json("Campo [NOME / RAZÃO SOCIAL] não informado!", $response);
+			return erro("Campo [NOME / RAZÃO SOCIAL] não informado!");
 		}
 
 		if ( vazio($post->nome_propriedade_fazenda) ) {
-			return json("Campo [NOME NO HARAS / FAZENDA] não informado!", $response);
+			return erro("Campo [NOME NO HARAS / FAZENDA] não informado!");
 		}
 		
 		if ( vazio($post->email_usuario) ) {
-			return json("Campo [E-MAIL] não informado!", $response);
+			return erro("Campo [E-MAIL] não informado!");
 		}
 
 		if ( !valida_email($post->email_usuario) ) {
-			return json("[E-MAIL] INVÁLIDO!", $response);
+			return erro("[E-MAIL] INVÁLIDO!");
 		}
 
 		$post->email_usuario = strtolower($post->email_usuario);
 
 		if ( vazio($post->senha_usuario) ) {
-			return json("Campo [SENHA] não informado!", $response);
+			return erro("Campo [SENHA] não informado!");
 		}
 		if ( strlen($post->senha_usuario) < 6 ) {
-			return json("Campo [SENHA] inválido!", $response);
+			return erro("Campo [SENHA] inválido!");
 		}
 
 		if ( vazio($post->telefone_celular) ) {
-			return json("Campo [CELULAR] não informado!", $response);
+			return erro("Campo [CELULAR] não informado!");
 		}
 
 
 
 		if ( !valida_celular($post->telefone_celular) ) {
-			return json("Número de [CELULAR] INVÁLIDO!", $response);
+			return erro("Número de [CELULAR] INVÁLIDO!");
 		}
 
 		if ( (int)$post->id_cidade <= 0 ) {
-			return json("Campo [CIDADE] não informado!", $response);
+			return erro("Campo [CIDADE] não informado!");
 		}
 
 		if ( (int)$post->id_estado <= 0 ) {
-			return json("Campo [ESTADO / UF] não informado!", $response);
+			return erro("Campo [ESTADO / UF] não informado!");
 		}
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		

@@ -106,14 +106,30 @@ class AnimaisController
         $resultado = $this->animais->menu_plantel($request);
         $response->getBody()->write($resultado);
         return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
-       
     }
 
 
-
+    /**
+	 * Método cadastro()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
     public function cadastro(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $res = $this->animais->cadastro($request);
+        $response->getBody()->write($res);
+        return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
+    }
+
+
+    /**
+	 * Método categorias()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+    public function categorias(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $res = $this->animais->categorias($request);
         $response->getBody()->write($res);
         return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
     }
