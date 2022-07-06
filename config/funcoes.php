@@ -28,6 +28,22 @@ function type_request($type = '') {
 }
 
 
+
+/**
+ * Função msg_debug
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return void
+*/
+function msg_debug($msg = '') { 
+  
+  if ( !vazio($msg) ) {
+    $_SESSION['debug'] = $msg;
+  }
+}
+
+
+
+
 /**
  * Função
  * @author Antonio Ferreira <@toniferreirasantos>

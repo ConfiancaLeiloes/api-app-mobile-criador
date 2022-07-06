@@ -233,7 +233,11 @@ class UsuarioModel
 	 * @author Antonio Ferreira <@toniferreirasantos>
 	 * @return 
 	*/
-	public function perfil($id_pessoa) {
+	// public function perfil($id_pessoa) {
+	public function perfil(ServerRequestInterface $request) {
+
+		// $post = body_params();
+		$pessoa = (object)$request->getParsedBody();
 
 		$connect = $this->conn->conectar();
 
@@ -275,32 +279,53 @@ class UsuarioModel
 			LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
 			JOIN tab_estados ON tab_estados.id_estado = tab_pessoas.id_estado 
 			-- JOIN tab_sexos ON tab_sexos.id_sexo = tab_pessoas.id_sexo
-			WHERE id_pessoa = :id_pessoa
+			WHERE (
+				id_pessoa = :id_pessoa AND 
+				id_usuario_sistema = :id_proprietario
+			)
 		";
 		
 		$stmt = $connect->prepare($query);
 		if(!$stmt) {
 			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
 		}
-		$stmt->bindParam(":id_pessoa", $id_pessoa, PDO::PARAM_INT);
+
+		$stmt->bindParam(':id_pessoa', $pessoa->id_pessoa, PDO::PARAM_INT);
+		$stmt->bindParam(':id_proprietario', $pessoa->id_proprietario, PDO::PARAM_INT);
 
 		if( !$stmt->execute() ) {
 			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
 		}
 		if ( $stmt->rowCount() <= 0 ) {
+			msg_debug("REGISTRO NÃO ENCONTRADO NO BANCO DE DADOS! ID INFORMADO: [{$pessoa->id_pessoa}]");
 			return erro("Usuário não encontrado na base de dados", 404);
 		}
 
-		$usuario = $stmt->fetchAll(PDO::FETCH_OBJ);
-		return sucesso("Usuário encontrado! -> {$usuario[0]->nome_razao_social}", $usuario);
+		$usuario = $stmt->fetch(PDO::FETCH_OBJ);
+		
+		$usuario->CAMPOS_ADICIONAIS = (object)[];
+		$usuario->CAMPOS_ADICIONAIS->PRIMEIRO_NOME_USUARIO = $usuario->PRIMEIRO_NOME_USUARIO;
+		unset($usuario->PRIMEIRO_NOME_USUARIO);
+
+		$usuario->CAMPOS_ADICIONAIS->NUM_ANIMAIS = $usuario->NUM_ANIMAIS;
+		unset($usuario->NUM_ANIMAIS);
+
+		if ( isset($usuario->nascimento) && data_valida($usuario->nascimento) ) {
+			$usuario->CAMPOS_ADICIONAIS->DATA_NASCIMENTO_FORMAT = data_formatada($usuario->nascimento);
+		}
+
+		if ( isset($usuario->CPF_CNPJ) && !vazio(isset($usuario->CPF_CNPJ)) ) {
+			$usuario->CPF_CNPJ = (string)$usuario->CPF_CNPJ;
+			$usuario->CAMPOS_ADICIONAIS->CPF_CNPJ_FORMAT = formata_cpf_cnpj($usuario->CPF_CNPJ);
+		}
+
+		$usuario->cep = (string)$usuario->cep;
+		$usuario->rg_ie = (string)$usuario->rg_ie;
+		$usuario->Numero = (string)$usuario->Numero;
+		$usuario->CAMPOS_ADICIONAIS->LOCALIZACAO = "{$usuario->nome_cidade}/{$usuario->sigla_estado}";
+
+		return sucesso("Usuário encontrado! -> {$usuario->nome_razao_social}", $usuario);
 	}
-
-
-
-
-
-
-
 
 
 
@@ -319,11 +344,134 @@ class UsuarioModel
 	 * @author Antonio Ferreira <@toniferreirasantos>
 	 * @return 
 	*/
-	public function cadastro($usuario) {
+	public function cadastro(ServerRequestInterface $request) {
+
+		// $post = body_params();
+		$post = (object)$request->getParsedBody();
+
+		if ( isset($post->id_pessoa) && ((int)$post->id_pessoa <= 0 || is_null($post->id_pessoa) || vazio($post->id_pessoa) ) ) {
+			// return json('Identificação de Usuário inválida!', $response);
+		}
+
+		# VALIDANDO {{NÃO}} CAMPOS OBRIGATÓRIOS
+		if ( !vazio($post->CPF_CNPJ) ) {
+
+			if ( !cpf_cnpj_valido($post->CPF_CNPJ) ) {
+				return json('Campo [CPF / CNPJ] inválido!', $response);
+			}
+			
+			$post->CPF_CNPJ = somente_numeros($post->CPF_CNPJ);
+		}
+
+		if ( isset($post->nascimento) && !vazio($post->nascimento) && !data_valida($post->nascimento) ) {
+			return json('Campo [DATA DE NASCIMENTO] inválida!', $response);
+		}
+
+		if ( isset($post->nascimento) && strtotime($post->nascimento) > strtotime(DATA_ATUAL) ) {
+			return json('Campo [DATA DE NASCIMENTO] inválida! (data futura)', $response);
+		}
+
+		if ( isset($post->cep) && !vazio($post->cep) ) {
+			if ( strlen($post->cep) < 8 ) {
+				return json("Campo [CEP] inválido!", $response);
+			}
+		}
+
+		if ( strlen($post->telefone_fixo) > 0 && strlen($post->telefone_fixo) < 8) {
+			return json('Campo [TELEFONE] inválido!', $response);
+		}
+
+
+		
+		# VALIDANDO CAMPOS OBRIGATÓRIOS
+		/*
+			nome_propriedade_fazenda,
+			nome_razao_social
+			telefone_celular
+			email_usuario
+			senha_usuario
+			id_cidade
+			id_estado
+		*/ 
+
+
+		if ( vazio($post->nome_razao_social) ) {
+			return json("Campo [NOME / RAZÃO SOCIAL] não informado!", $response);
+		}
+
+		if ( vazio($post->nome_propriedade_fazenda) ) {
+			return json("Campo [NOME NO HARAS / FAZENDA] não informado!", $response);
+		}
+		
+		if ( vazio($post->email_usuario) ) {
+			return json("Campo [E-MAIL] não informado!", $response);
+		}
+
+		if ( !valida_email($post->email_usuario) ) {
+			return json("[E-MAIL] INVÁLIDO!", $response);
+		}
+
+		$post->email_usuario = strtolower($post->email_usuario);
+
+		if ( vazio($post->senha_usuario) ) {
+			return json("Campo [SENHA] não informado!", $response);
+		}
+		if ( strlen($post->senha_usuario) < 6 ) {
+			return json("Campo [SENHA] inválido!", $response);
+		}
+
+		if ( vazio($post->telefone_celular) ) {
+			return json("Campo [CELULAR] não informado!", $response);
+		}
+
+
+
+		if ( !valida_celular($post->telefone_celular) ) {
+			return json("Número de [CELULAR] INVÁLIDO!", $response);
+		}
+
+		if ( (int)$post->id_cidade <= 0 ) {
+			return json("Campo [CIDADE] não informado!", $response);
+		}
+
+		if ( (int)$post->id_estado <= 0 ) {
+			return json("Campo [ESTADO / UF] não informado!", $response);
+		}
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		
+		foreach ($post as $nome_campo => $valor) {
+			if ( vazio($valor) ) {
+				$post->$nome_campo = null;
+			}
+		}
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		
+		if ( (int)$post->id_pessoa > 0 ) {
+			return $this->update($post);
+		}
+		else {
+			return $this->insert($post);
+		}
+
+	}
+
+	
+
+
+
+
+
+
+
+	/**
+	 * Método insert()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return 
+	*/
+	private function insert($usuario) {
 
 		$connect = $this->conn->conectar();
-
-
 
 		# VERIFICANDO DADOS REPETIDOS NO BANCO
 		$query =
@@ -628,7 +776,7 @@ class UsuarioModel
 	 * @author Antonio Ferreira <@toniferreirasantos>
 	 * @return 
 	*/
-	public function update($usuario) {
+	private function update($usuario) {
 
 		$connect = $this->conn->conectar();
 
