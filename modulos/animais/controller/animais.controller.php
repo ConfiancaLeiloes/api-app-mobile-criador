@@ -9,17 +9,6 @@ class AnimaisController
        $this->animais = new AnimaisModel();
     }
 
-    public function index(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
-    {
-
-        var_dump($request->getQueryParams());
-
-        exit;
-        $resultado = $this->animais->index();
-        $response->getBody()->write($resultado);
-        return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
-       
-    }
     public function detalhes_animal_cobricoes(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         //$plantel = new PlantelModel();

@@ -75,6 +75,9 @@ try {
     # ROTAS DE MANEJOS
     require_once ('./modulos/manejo/rotas.php');
 
+    # ROTAS DE MANEJOS
+    require_once ('./modulos/negocios/rotas.php');
+
     
 
     $app->run();
