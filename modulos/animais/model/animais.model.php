@@ -1439,7 +1439,7 @@ class AnimaisModel
 	 * @author Antonio Ferreira <@toniferreirasantos>
 	 * @return function
 	*/
-    public function categorias($post) {
+    public function categorias() {
 
         $connect = $this->conn->conectar();
         $query =
@@ -1471,8 +1471,42 @@ class AnimaisModel
             array_push($dados, numerics_json($dado));
         }
         
-        // numerics_json
         return sucesso("{$stmt->rowCount()} RESULTADOS ENCONTRADOS!", $dados);
+    }
+
+
+
+    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    /**
+	 * Método localizacoes()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+    // public function localizacoes($post) {
+    public function localizacoes(ServerRequestInterface $request) {
+
+        // $post = body_params()
+        $post = (object)$request->getParsedBody();
+
+        $connect = $this->conn->conectar();
+        $query =
+		"  SELECT * FROM tab_localizacoes
+            WHERE id_usuario_sistema = :id_proprietario -- DONO DO HARAS/FAZENDA/EMPRESA
+		";
+        $stmt = $connect->prepare($query);
+        if(!$stmt) {
+            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+        }
+        $stmt->bindParam(':id_proprietario', $post->id_proprietario, PDO::PARAM_INT);
+        if( !$stmt->execute() ) {
+            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+        }
+        if ( $stmt->rowCount() <= 0 ) {   
+            return erro("NENHUMA LOCALIZAÇÃO ENCONTRADA!");
+        }
+
+        return sucesso("{$stmt->rowCount()} RESULTADOS ENCONTRADOS!", $stmt->fetchAll(PDO::FETCH_OBJ));
     }
 
 } # AnimaisModel {}

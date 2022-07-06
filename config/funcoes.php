@@ -36,7 +36,7 @@ function type_request($type = '') {
 */
 function msg_debug($msg = '') { 
   
-  if ( !vazio($msg) ) {
+  if ( !empty($msg) ) {
     $_SESSION['debug'] = $msg;
   }
 }

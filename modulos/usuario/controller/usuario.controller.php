@@ -119,10 +119,12 @@ class UsuarioController
 
 		}
 
-
 		
 		if ( !vazio($msg_erro) ) {
+			
+			msg_debug($post);
 			$_SESSION['token_valido'] = false;
+
 			@header("HTTP/1.1 400 ERRO NA REQUISIÇÃO!");
 			@header("Content-type: application/json; charset=utf-8");			
 			exit(erro($msg_erro));

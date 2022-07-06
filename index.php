@@ -50,7 +50,8 @@ $app->setBasePath((function () {
     return '';
 })());
 
-//$app->get('/detalhes-animal-cobricoes', AnimaisController::class . ':detalhes_animal_cobricoes');
+// Get the default error handler and register my custom error renderer.
+$errorHandler = $errorMiddleware->getDefaultErrorHandler()->forceContentType('application/json');
 
 
 if (
@@ -70,8 +71,12 @@ require_once ('./modulos/animais/rotas.php');
 # ROTAS DE NEGOCIOS
 require_once ('./modulos/negocios/rotas.php');
 
-// Get the default error handler and register my custom error renderer.
-$errorHandler = $errorMiddleware->getDefaultErrorHandler()->forceContentType('application/json');
+# ROTAS DE MANEJOS
+require_once ('./modulos/manejo/rotas.php');
+
+# ROTAS DE MANEJOS
+require_once ('./modulos/negocios/rotas.php');
+
 
 try {
     $app->run();
