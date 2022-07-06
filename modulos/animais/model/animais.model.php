@@ -1033,6 +1033,7 @@ class AnimaisModel
         if( isset($post->id_dna) && !in_array($post->id_dna, [74, 75]) ) return erro('campo [DNA] inválido!');
         if ( isset($post->id_consignacao) && !in_array($post->id_consignacao, [112, 113]) ) return erro('campo [CONSIGNAÇÃO] inválido!');
 
+
         $post->chip                 = isset($post->chip) && !vazio($post->chip) ? $post->chip                                                 : NULL;
         $post->marca                = isset($post->marca) && !vazio($post->marca) ? $post->marca                                              : 'SEM MARCA';
         $post->valor_mercado        = isset($post->valor_mercado) && !vazio($post->valor_mercado) ? $post->valor_mercado                      : '0.00';
@@ -1124,7 +1125,7 @@ class AnimaisModel
                 ID_USUARIO_ATUALIZACAO
 			) 
 			VALUES (
-                :id_usuario_sistema, -- ID DO 'DONO' DO HARAS/FAZENDA
+                :id_usuario_sistema, -- 'DONO' DO HARAS/FAZENDA
                 
                 :id_tipo_animal,
                 :id_situacao,
@@ -1143,7 +1144,7 @@ class AnimaisModel
 
                 :id_situacao_macho_castrado,
                 :id_dna,
-                :id_proprietario,
+                :id_proprietario, -- DONO DO ANIMAL
                 :id_criador,
                 :id_consignacao,
                 :cod_associacao,
@@ -1173,10 +1174,10 @@ class AnimaisModel
             return erro("Erro: {$connect->errno} - {$connect->error}", 500);
         }
 
-        $stmt->bindParam(':id_usuario_sistema', $post->id_proprietario, PDO::PARAM_INT);
-
+        
         # BIND PARAMS
         {
+            $stmt->bindParam(':id_usuario_sistema', $post->id_proprietario, PDO::PARAM_INT); # DONO HARAS/FAZENDA/EMRESA
             $stmt->bindParam(':id_tipo_animal', $post->id_tipo_animal);
             $stmt->bindParam(':id_situacao', $post->id_situacao);
             $stmt->bindParam(':id_raca', $post->id_raca);
@@ -1192,7 +1193,7 @@ class AnimaisModel
             $stmt->bindParam(':id_mae', $post->id_mae);
             $stmt->bindParam(':id_situacao_macho_castrado', $post->id_situacao_macho_castrado);
             $stmt->bindParam(':id_dna', $post->id_dna);
-            $stmt->bindParam(':id_proprietario', $post->id_proprietario_animal); # !!!!
+            $stmt->bindParam(':id_proprietario', $post->id_proprietario_animal); # DONO DO ANIMAL
             $stmt->bindParam(':id_criador', $post->id_criador);
             $stmt->bindParam(':id_consignacao', $post->id_consignacao);
             $stmt->bindParam(':cod_associacao', $post->cod_associacao);
@@ -1255,8 +1256,121 @@ class AnimaisModel
 	 * @return function
 	*/
     private function update($post) {
+
         
-        return sucesso("Ainda implementando UPDATE. Aguarde...", $post);
+        $connect = $this->conn->conectar();
+        $connect->beginTransaction();
+        $query_update =
+		"   UPDATE tab_animais SET
+                id_tipo_animal       = :id_tipo_animal,
+                id_situacao          = :id_situacao,
+                id_raca              = :id_raca,
+                id_sexo              = :id_sexo,
+                id_pelagem           = :id_pelagem,
+                id_grupo             = :id_grupo,
+                id_situacao_cadastro = :id_situacao_cadastro,
+                id_classificacao     = :id_classificacao,
+                id_situacao_vida     = :id_situacao_vida,
+                id_localizacao       = :id_localizacao,
+                id_vender            = :id_vender,
+                
+                id_pai = :id_pai,
+                id_mae = :id_mae,
+
+                id_situacao_macho_castrado = :id_situacao_macho_castrado,
+                id_dna                     = :id_dna,
+                id_proprietario            = :id_proprietario_animal, -- DONO DO ANIMAL
+                id_criador                 = :id_criador,
+                id_consignacao             = :id_consignacao,
+                cod_associacao             = :cod_associacao,
+                nome                       = upper(:nome),
+                data_nascimento            = :data_nascimento,
+                registro_associacao        = :registro_associacao,
+                chip                       = :chip,
+                marca                      = :marca,
+                grau_de_sangue             = :grau_de_sangue,
+                valor_mercado              = :valor_mercado,
+                informacoes_diversas       = :informacoes_diversas,
+                toe_animal                 = :toe_animal,
+                tod_animal                 = :tod_animal,
+
+                data_morte = :data_morte,
+                causa_morte = :causa_morte,
+
+                DATA_ATUALIZACAO = CURDATE(), -- DATA_ATUALIZACAO,
+                ID_USUARIO_ATUALIZACAO = :ID_USUARIO_ATUALIZACAO
+            WHERE (
+                id_animal = :id_animal AND
+                id_usuario_sistema = :id_proprietario -- DONO DO HARAS/FAZENDA/EMPRESA
+            )
+		";
+        $stmt = $connect->prepare($query_update);
+        if(!$stmt) {
+            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+        }
+
+        # BIND PARAMS
+        {
+
+            $stmt->bindParam(':id_animal', $post->id_animal, PDO::PARAM_INT);
+            $stmt->bindParam(':id_proprietario', $post->id_proprietario, PDO::PARAM_INT);
+            $stmt->bindParam(':ID_USUARIO_ATUALIZACAO', $post->id_usuario, PDO::PARAM_INT);
+
+
+            $stmt->bindParam(':id_tipo_animal', $post->id_tipo_animal);
+            $stmt->bindParam(':id_situacao', $post->id_situacao);
+            $stmt->bindParam(':id_raca', $post->id_raca);
+            $stmt->bindParam(':id_sexo', $post->id_sexo);
+            $stmt->bindParam(':id_pelagem', $post->id_pelagem);
+            $stmt->bindParam(':id_grupo', $post->id_grupo);
+            $stmt->bindParam(':id_situacao_cadastro', $post->id_situacao_cadastro);
+            $stmt->bindParam(':id_classificacao', $post->id_classificacao);
+            $stmt->bindParam(':id_situacao_vida', $post->id_situacao_vida);
+            $stmt->bindParam(':id_localizacao', $post->id_localizacao);
+            $stmt->bindParam(':id_vender', $post->id_vender);
+            $stmt->bindParam(':id_pai', $post->id_pai);
+            $stmt->bindParam(':id_mae', $post->id_mae);
+            $stmt->bindParam(':id_situacao_macho_castrado', $post->id_situacao_macho_castrado);
+            $stmt->bindParam(':id_dna', $post->id_dna);
+            $stmt->bindParam(':id_proprietario_animal', $post->id_proprietario_animal); # DONO DO ANIMAL
+            $stmt->bindParam(':id_criador', $post->id_criador);
+            $stmt->bindParam(':id_consignacao', $post->id_consignacao);
+            $stmt->bindParam(':cod_associacao', $post->cod_associacao);
+            $stmt->bindParam(':nome', $post->nome);
+            $stmt->bindParam(':data_nascimento', $post->data_nascimento);
+            $stmt->bindParam(':registro_associacao', $post->registro_associacao);
+            $stmt->bindParam(':chip', $post->chip);
+            $stmt->bindParam(':marca', $post->marca);
+            $stmt->bindParam(':grau_de_sangue', $post->grau_de_sangue);
+            $stmt->bindParam(':valor_mercado', $post->valor_mercado);
+            $stmt->bindParam(':informacoes_diversas', $post->informacoes_diversas);
+            $stmt->bindParam(':toe_animal', $post->toe_animal);
+            $stmt->bindParam(':tod_animal', $post->tod_animal);
+            $stmt->bindParam(':data_morte', $post->data_morte);
+            $stmt->bindParam(':causa_morte', $post->causa_morte);
+        }
+
+        if( !$stmt->execute() ) {
+            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+        }
+        $connect->commit();
+
+
+        $_SESSION['debug'] = "Animal de registro [{$post->id_animal}] ATUALIZADO!";
+        
+        # ARMAZENANDO A IMAGEM DO ANIMAL NO DIRETÓRIO DO SERVER
+        if ( !vazio($post->foto_base64) ) {
+            $_SESSION['update_img'] = true;
+            $res = json_decode(@$this->foto_base64_arq($post->id_animal, $post->foto_base64));
+            if ( !$res->codigo ) {
+                return json_encode($res);
+            }
+        }
+
+        $_SESSION['debug'] .= isset($_SESSION['update_img']) ? '- IMAGEM ATUALIZADA' : '';
+
+        $sub_msg = ($stmt->rowCount() <= 0 && !isset($_SESSION['update_img'])) ? ' - NENHUMA INFORMAÇÃO ALTERADA!' : '';
+        return sucesso("CADASTRO ATUALIZADO COM SUCESSO!{$sub_msg}");
     }
 
 
@@ -1281,10 +1395,14 @@ class AnimaisModel
             $foto_base64 = "data:image/jpeg;base64,{$foto_base64}";
         }
 
-        $nome_arquivo = "animal_{$id_animal}.png";
+        
+        $nome_arquivo = 'animal_'. str_pad($id_animal, 6, '0', STR_PAD_LEFT) .'.jpg';
+        
         if ( !@file_put_contents(PATH_UPLOAD_FOTOS . "/{$nome_arquivo}", file_get_contents($foto_base64)) ) {
             return erro("NÃO FOI POSSÍVEL ARMAZENAR A IMAGEM RECEBIDA!");
         }
+
+        $nome_arquivo .= isset($_SESSION['update_img']) ? '?v='.date('dmyHis') : '';
 
         $connect = $this->conn->conectar();
         $query_update =
@@ -1304,7 +1422,7 @@ class AnimaisModel
             return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
         }
         if ( $stmt->rowCount() <= 0 ) {   
-            return erro("Imagem do Animal não cadastrada...");
+            // return erro("Imagem do Animal não cadastrada...");
         }
         
         return sucesso("Imagem cadastrada com sucesso!");
