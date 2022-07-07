@@ -121,7 +121,7 @@ class AnimaisController
         return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
     }
 
-
+    
     /**
 	 * Método categorias()
 	 * @author Antonio Ferreira <@toniferreirasantos>
@@ -130,6 +130,21 @@ class AnimaisController
     public function categorias(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $res = $this->animais->categorias();
+        $response->getBody()->write($res);
+        return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
+    }
+
+
+
+
+    /**
+	 * Método pais()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+    public function pais(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $res = $this->animais->pais($request);
         $response->getBody()->write($res);
         return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
     }

@@ -58,11 +58,11 @@ class AnimaisModel
                 LEFT JOIN tab_nascimentos ON tab_nascimentos.id_cobricao = tab_cobricoes.id_cobricao
                 WHERE  (
                     (
-                        tab_cobricoes.id_animal_macho = '$id_animal' OR
-                        tab_cobricoes.id_animal_femea = '$id_animal' OR 
-                        tab_cobricoes.id_animal_receptora = '$id_animal'
+                        tab_cobricoes.id_animal_macho = '{$id_animal}' OR
+                        tab_cobricoes.id_animal_femea = '{$id_animal}' OR 
+                        tab_cobricoes.id_animal_receptora = '{$id_animal}'
                     )
-                    AND tab_cobricoes.id_usuario_sistema = '$id_proprietario' 
+                    AND tab_cobricoes.id_usuario_sistema = '{$id_proprietario}'
                     AND tab_cobricoes.id_disponibilidade = '76'  
                     AND tab_cobricoes.id_situacao = '1'
                 )
@@ -83,11 +83,11 @@ class AnimaisModel
                 return sucesso("Nenhum animal encontrado!");
             }
             
-            return sucesso("{$stmt->rowCount()} animai(s) encontrado(s)",["dados"=>$stmt->fetchAll(PDO::FETCH_OBJ)]);
+            return sucesso("{$stmt->rowCount()} resultado(s) encontrado(s)",["dados"=>$stmt->fetchAll(PDO::FETCH_OBJ)]);
         } 
-        // catch (\Throwable $th) {
-        //     throw new Exception($th);
-        // }
+        catch (\Throwable $th) {
+            throw new Exception($th);
+        }
         catch (customException $e) {
             //display custom message
             echo $e->errorMessage();
@@ -720,143 +720,186 @@ class AnimaisModel
         }
         
     }
+
+
+
+
+    
     public function listar_plantel(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
-        $id_proprietario    = $params['id_proprietario'];
-        $palavra_chave      = $params['palavra_chave'];     
-        $grupo              = $params['grupo'];
-        $tipo_baixa         = $params['tipo_baixa'];
-        $sexo               = $params['sexo'];
-        $situacao           = $params['situacao'];
-        $id_raca            = $params['id_raca'];
+
+        $id_proprietario = (int)trim($params['id_proprietario']);
+        $palavra_chave = trim($params['palavra_chave']);
+        $tipo_baixa = (int)trim($params['tipo_baixa']);
+        $situacao = (int)trim($params['situacao']);
+        $id_raca = (int)trim($params['id_raca']);
+        $grupo = (int)trim($params['grupo']);
+        $sexo = (int)trim($params['sexo']);
 
         $url_fotos = URL_FOTOS;
 
-        if ((int)($id_proprietario) == 0 || (int)$grupo == 0 || (int)$tipo_baixa == 0 || (int)$sexo == 0 || (int)$situacao == 0) 
-            return erro("Parâmetros inválidos ou faltantes!", []);
+        if (
+            $sexo <= 0 ||
+            $grupo <= 0 ||
+            $situacao <= 0 ||
+            $tipo_baixa <= 0
+        ) return erro("Parâmetros inválidos ou faltantes!");
         
         try {
 
             // Trata os parâmetros recebidos para construção da Query
 
             // Filtro raca, ticket 2686
-            $filtro_raca = $id_raca ? "tab_animais.id_raca = {$id_raca} AND" : '';
-            
+            $filtro_raca = $id_raca ? " AND tab_animais.id_raca = {$id_raca} " : '';
+
             // Define o Grupo
-            $filtro_grupo = (int)$grupo == 99 ? "" : " tab_animais.id_grupo = '$grupo' AND ";
+            $filtro_grupo = (int)$grupo == 99 ? "" : " AND tab_animais.id_grupo = '$grupo'  ";
 
             // Define o Tipo de Baixa  
             $filtro_tipo_baixa = (int)$tipo_baixa == 5 ?  "" : "";
-            $filtro_tipo_baixa = (int)$tipo_baixa == 1 ? " (tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 > '0') AND tab_animais.id_situacao_vida = '15' AND " : $filtro_tipo_baixa;
-            $filtro_tipo_baixa = (int)$tipo_baixa == 2 ? " (tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 = '0') AND tab_compras_vendas_animais.id_situacao_negocio = '42' AND " : $filtro_tipo_baixa;
-            $filtro_tipo_baixa = (int)$tipo_baixa == 3 ? " tab_animais.id_situacao_vida = '16' AND " : $filtro_tipo_baixa;
-            $filtro_tipo_baixa = (int)$tipo_baixa == 4 ? " tab_animais.id_vender = '14' AND " : $filtro_tipo_baixa;
+            $filtro_tipo_baixa = (int)$tipo_baixa == 1 ? " AND (tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 > '0') AND tab_animais.id_situacao_vida = '15' " : '';
+            $filtro_tipo_baixa = (int)$tipo_baixa == 2 ? " AND (tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 = '0') AND tab_compras_vendas_animais.id_situacao_negocio = '42' " : '';
+            $filtro_tipo_baixa = (int)$tipo_baixa == 3 ? " AND tab_animais.id_situacao_vida = '16'  " : '';
+            $filtro_tipo_baixa = (int)$tipo_baixa == 4 ? " AND tab_animais.id_vender = '14' " : '';
             
             // Define o Sexo
-            $filtro_sexo = (int)$sexo == 4 ? " tab_animais.id_situacao_macho_castrado = '7' AND " : " tab_animais.id_sexo = '$sexo' AND ";
+            $filtro_sexo = (int)$sexo == 4 ? " AND tab_animais.id_situacao_macho_castrado = '7' " : " AND tab_animais.id_sexo = '$sexo' ";
             $filtro_sexo = (int)$sexo == 5 ? "" : $filtro_sexo;
 
             // Define a situação
-            $filtro_situacao = (int)$situacao == 3 ? "" : " tab_animais.id_situacao = '$situacao' AND ";
+            $filtro_situacao = (int)$situacao == 3 ? "" : " AND tab_animais.id_situacao = '$situacao'  ";
 
+            // echo "$filtro_grupo\n";
+            // echo "$filtro_tipo_baixa\n";
+            // echo "$filtro_sexo\n";
+            // echo "$filtro_situacao\n";
+            // echo "$filtro_raca\n";
+            // exit;
+
+            $FILTRO_PALAVRA_CHAVE = '';
+
+            if ( strlen($palavra_chave) > 3 ) {
+                $FILTRO_PALAVRA_CHAVE =
+                "   AND ( 
+                        tab_animais.nome                    LIKE '%{$palavra_chave}%'
+                        OR tab_animais.chip                 LIKE '%{$palavra_chave}%'
+                        OR tab_animais.marca                LIKE '%{$palavra_chave}%'
+                        OR tab_pai_animal.nome              LIKE '%{$palavra_chave}%'
+                        OR tab_mae_animal.nome              LIKE '%{$palavra_chave}%'
+                        -- OR tab_lotes.descricao              LIKE '%{$palavra_chave}%'
+                        -- OR tab_localizacoes.descricao       LIKE '%{$palavra_chave}%'
+                        OR tab_grupo_animais.descricao      LIKE '%{$palavra_chave}%'
+                        OR tab_animais.registro_associacao  LIKE '%{$palavra_chave}%'
+                        OR tab_animais.informacoes_diversas LIKE '%{$palavra_chave}%'
+                        -- OR tab_controle_sanitario.descricao LIKE '%{$palavra_chave}%'
+                    )
+                ";
+            }
+            
+
+            $connect = $this->conn->conectar();
             $query_sql = 
-                        "SELECT  
-                        tab_animais.id_animal as ID_ANIMAL,
-                        UPPER(tab_grupo_animais.descricao) as GRUPO_ANIMAL,  
-                        tab_animais.nome as NOME_ANIMAL,
-                        tab_racas.descricao AS RACA_ANIMAL,
-                        tab_racas.id_raca AS ID_RACA_ANIMAL, 
-                        UPPER(tab_animais.marca) as MARCA_ANIMAL, 
-                        UPPER(tab_sexos.sexo_animal) as SEXO_ANIMAL, 
-                        DATE_FORMAT(tab_animais.data_nascimento, '%d/%m/%Y') as NASCIMENTO_ANIMAL, 
-                        tab_pai_animal.nome as PAI_ANIMAL, 
-                        tab_mae_animal.nome as MAE_ANIMAL, 
-                        tab_animais.registro_associacao as REGISTRO_ANIMAL, 
-                        UPPER(tab_situacoes.descricao) as DESCRICAO_SITUACAO_ANIMAL,  
-                        IF(ISNULL(tab_socios.cotas_socio_01),'0.00',tab_socios.cotas_socio_01) as COTAS_ANIMAL,
-                        IF(tab_animais.foto_perfil_animal = 'sem_foto.jpg' OR tab_animais.foto_perfil_animal IS NULL ,null,CONCAT('$url_fotos',tab_animais.foto_perfil_animal)) as FOTO_ANIMAL,
-                        (
-                            CASE 
-                                WHEN tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 > 0 AND tab_animais.id_situacao_vida = '15' THEN '1' 
-                                WHEN tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 = 0 AND tab_compras_vendas_animais.id_situacao_negocio = '42' THEN '2'
-                                WHEN tab_animais.id_situacao_vida = '16' THEN '3'
-                                WHEN tab_animais.id_vender = '14' THEN '4'
-                                ELSE '5'
-                            END
-                        ) as TIPO_BAIXA 
-                    FROM tab_animais  
-                        JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_animais.id_situacao   
-                        JOIN tab_sexos ON tab_sexos.id_sexo = tab_animais.id_sexo   
-                        JOIN tab_grupo_animais ON tab_grupo_animais.id_grupo_animal = tab_animais.id_grupo
-                        JOIN tab_racas ON tab_animais.id_raca = tab_racas.id_raca  
-                        LEFT JOIN tab_animais AS tab_pai_animal ON tab_pai_animal.id_animal = tab_animais.id_pai  
-                        LEFT JOIN tab_animais AS tab_mae_animal ON tab_mae_animal.id_animal = tab_animais.id_mae   
-                        LEFT JOIN tab_socios ON tab_socios.id_animal = tab_animais.id_animal   
-                        LEFT JOIN tab_compras_vendas_animais ON tab_compras_vendas_animais.id_produto_animal = tab_animais.id_animal
-                        LEFT JOIN tab_localizacoes ON tab_localizacoes.id_localizacao = tab_animais.id_localizacao
-                        LEFT JOIN tab_animais_nos_lotes ON tab_animais_nos_lotes.id_animal = tab_animais.id_animal
-                        LEFT JOIN tab_lotes ON tab_lotes.id_lote = tab_animais_nos_lotes.id_lote
-                        LEFT JOIN tab_animais_manejo ON tab_animais_manejo.id_animal = tab_animais.id_animal
-                        LEFT JOIN tab_controle_sanitario ON tab_controle_sanitario.id_manejo = tab_animais_manejo.id_manejo
-                    WHERE 
-                        $filtro_grupo
-                        $filtro_tipo_baixa
-                        $filtro_sexo
-                        $filtro_situacao
-                        $filtro_raca
-                        ( 
-                            tab_animais.nome LIKE '%$palavra_chave%' OR  
-                            tab_animais.marca LIKE '%$palavra_chave%' OR  
-                            tab_animais.registro_associacao LIKE '%$palavra_chave%' OR  
-                            tab_grupo_animais.descricao LIKE '%$palavra_chave%' OR  
-                            tab_animais.chip LIKE '%$palavra_chave%' OR    
-                            tab_animais.informacoes_diversas LIKE '%$palavra_chave%' OR
-                            tab_localizacoes.descricao LIKE '$palavra_chave' OR
-                            tab_lotes.descricao LIKE '$palavra_chave' OR
-                            tab_controle_sanitario.descricao LIKE '%$palavra_chave%' OR
-                            tab_pai_animal.nome LIKE '%$palavra_chave%' OR
-                            tab_mae_animal.nome LIKE '%$palavra_chave%'
-                        ) AND 
-                        tab_animais.id_usuario_sistema = '$id_proprietario' AND
-                        tab_animais.id_situacao_cadastro = '11' AND
-                        tab_animais.id_consignacao = '112' 
-                    GROUP BY tab_animais.id_animal  
-                    ORDER BY tab_animais.nome ASC";
+            "   SELECT  
+                    tab_animais.id_animal as ID_ANIMAL,
+                    UPPER(tab_grupo_animais.descricao) as GRUPO_ANIMAL,  
+                    tab_animais.nome as NOME_ANIMAL,
+                    tab_racas.descricao AS RACA_ANIMAL,
+                    tab_racas.id_raca AS ID_RACA_ANIMAL, 
+                    UPPER(tab_animais.marca) as MARCA_ANIMAL, 
+                    UPPER(tab_sexos.sexo_animal) as SEXO_ANIMAL, 
+                    DATE_FORMAT(tab_animais.data_nascimento, '%d/%m/%Y') as NASCIMENTO_ANIMAL, 
+                    tab_pai_animal.nome as PAI_ANIMAL, 
+                    tab_mae_animal.nome as MAE_ANIMAL, 
+                    tab_animais.registro_associacao as REGISTRO_ANIMAL, 
+                    UPPER(tab_situacoes.descricao) as DESCRICAO_SITUACAO_ANIMAL,  
+                    IF(ISNULL(tab_socios.cotas_socio_01),'0.00',tab_socios.cotas_socio_01) as COTAS_ANIMAL,
+                    IF(tab_animais.foto_perfil_animal = 'sem_foto.jpg' OR tab_animais.foto_perfil_animal IS NULL ,null,CONCAT('$url_fotos',tab_animais.foto_perfil_animal)) as FOTO_ANIMAL,
+                    (
+                        CASE 
+                            WHEN tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 > 0 AND tab_animais.id_situacao_vida = '15' THEN '1' 
+                            WHEN tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 = 0 AND tab_compras_vendas_animais.id_situacao_negocio = '42' THEN '2'
+                            WHEN tab_animais.id_situacao_vida = '16' THEN '3'
+                            WHEN tab_animais.id_vender = '14' THEN '4'
+                            ELSE '5'
+                        END
+                    ) as TIPO_BAIXA 
+                FROM tab_animais  
+                JOIN tab_racas     ON tab_animais.id_raca = tab_racas.id_raca  
+                JOIN tab_sexos     ON tab_sexos.id_sexo = tab_animais.id_sexo   
+                JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_animais.id_situacao   
+                JOIN tab_grupo_animais ON tab_grupo_animais.id_grupo_animal = tab_animais.id_grupo
+                LEFT JOIN tab_animais  AS tab_pai_animal ON tab_pai_animal.id_animal = tab_animais.id_pai  
+                LEFT JOIN tab_animais  AS tab_mae_animal ON tab_mae_animal.id_animal = tab_animais.id_mae   
+                LEFT JOIN tab_socios   ON tab_socios.id_animal = tab_animais.id_animal   
+                LEFT JOIN tab_compras_vendas_animais ON tab_compras_vendas_animais.id_produto_animal = tab_animais.id_animal
 
-            $pdo = $this->conn->conectar();
-            $res = $pdo->query($query_sql);
-            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
-            
-            // return erro("teste");
-                
-            if (count($dados) <= 0) return sucesso("Nenhum animal foi localizado!");
-            
-            //Array a ter os dados empilhados para ser convertido em JSON
-            $total_machos = 0;
-            $total_femeas = 0;
-            foreach ($dados as $key => $value) {
-                // Soma os Animais
-               trim($value['SEXO_ANIMAL']) == "MACHO" ? $total_machos++ : $total_femeas++;
+                -- LEFT JOIN tab_localizacoes ON tab_localizacoes.id_localizacao = tab_animais.id_localizacao
+                -- LEFT JOIN tab_animais_nos_lotes ON tab_animais_nos_lotes.id_animal = tab_animais.id_animal
+                -- LEFT JOIN tab_lotes ON tab_lotes.id_lote = tab_animais_nos_lotes.id_lote
+                -- LEFT JOIN tab_animais_manejo ON tab_animais_manejo.id_animal = tab_animais.id_animal
+                -- LEFT JOIN tab_controle_sanitario ON tab_controle_sanitario.id_manejo = tab_animais_manejo.id_manejo
+                WHERE (
+                    tab_animais.id_usuario_sistema = '{$id_proprietario}' 
+                    AND tab_animais.id_situacao_cadastro = '11'
+                    AND tab_animais.id_consignacao = '112' 
+                    
+                    $filtro_sexo
+                    $filtro_raca
+                    $filtro_grupo
+                    $filtro_situacao
+                    $filtro_tipo_baixa
 
-               //Acrescenta contador
-               $dados[$key]['CONTADOR'] =  $key+1;
+                    {$FILTRO_PALAVRA_CHAVE}
+                )
+                GROUP BY tab_animais.id_animal  
+                ORDER BY tab_animais.nome ASC
+            ";
+            
+            $stmt = $connect->prepare($query_sql);
+            if(!$stmt) {
+                return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+            }            
+            if( !$stmt->execute() ) {
+                return erro("SQLSTATE: #". $stmt->errorInfo()[2], 500);
+            }
+            if ( $stmt->rowCount() <= 0 ) {
+                return erro("Localização não cadastrada!");
             }
 
-            // Monta o Array do Somatório
+            $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $num_resultados =  count($dados);
+            
+            if ($num_resultados <= 0) return sucesso("Nenhum animal foi localizado!");
+            
+            # Dados empilhados para ser convertido em JSON
+            $total_machos = 0;
+            $total_femeas = 0;
+
+            foreach ($dados as $key => $value) {
+                # SOMA OS ANIMAIS
+                trim($value['SEXO_ANIMAL']) == "MACHO" ? $total_machos++ : $total_femeas++;
+
+                $dados[$key]['CONTADOR'] =  $key+1;
+            }
+
+            # Array do Somatório
             $somatorio = [
                 "TOTAL_GERAL_FILHOS" => (int)$key+1,
                 "TOTAL_MACHOS" => (int)$total_machos,
                 "TOTAL_FEMEAS" => (int)$total_femeas
             ];
 
-            return sucesso("", ["dados"=>$dados, "resumo"=>$somatorio]);
+            return sucesso("{$num_resultados} RESULTADOS ENCONTRADOS!", ["dados"=>$dados, "resumo"=>$somatorio]);
 
         } catch (\Throwable $th) {
             throw new Exception($th);
         }
         
     }
+
+
+
     public function listar_racas(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -982,6 +1025,24 @@ class AnimaisModel
 		// $post = body_params()
         $post = (object)$request->getParsedBody();
 
+
+        if( !in_array($post->id_situacao_cadastro, [11, 12]) ) return erro('campo [SITUAÇÃO/TIPO DE CADASTRO] inválido!');
+
+        # SE FOR CADASTRO DE ANIMAL AUXILIAR...
+        if ( $post->id_situacao_cadastro == 12  ) {
+            $post->id_raca = 1;
+            $post->id_vender = 13;
+            $post->id_pelagem = 1;
+            $post->id_situacao = 1;
+            $post->id_classificacao = 1;
+            $post->id_situacao_vida = 15;
+            $post->data_nascimento = '1970-01-01';
+
+            $post->id_criador = $post->id_proprietario;
+            $post->id_proprietario_animal = $post->id_proprietario;
+        }
+        
+
         $post->id_pai = isset($post->id_pai) && !vazio($post->id_pai) ? (int)$post->id_pai : null;
         $post->id_mae = isset($post->id_mae) && !vazio($post->id_mae) ? (int)$post->id_mae : null;
 
@@ -998,7 +1059,7 @@ class AnimaisModel
         
         if( vazio($post->id_tipo_animal) ) return erro('campo [TIPO ANIMAL] obrigatório!');
         if( !in_array($post->id_tipo_animal, [10, 20, 30, 40, 50, 60])) return erro('campo [TIPO ANIMAL] inválido!');
-        if( !in_array($post->id_situacao_cadastro, [11, 12]) ) return erro('campo [SITUAÇÃO/TIPO DE CADASTRO] inválido!');
+        
         if( vazio($post->id_classificacao) ) return erro('campo [CLASSIFICAÇÃO] obrigatório!');
         
         if( !in_array($post->id_situacao_vida, [15, 16]) ) return erro('campo [SITUAÇÃO DE VIDA] inválido!');
@@ -1045,6 +1106,8 @@ class AnimaisModel
 
         $post->id_dna = !vazio($post->id_dna) ? $post->id_dna : 75;
         $post->id_consignacao = !vazio($post->id_consignacao) ? $post->id_consignacao : 112;
+
+        return sucesso("MÉTODO EM MANUTENÇÃO!", $post);
 
         if ( (int)$post->id_animal <= 0 ) {
             return $this->insert($post);
@@ -1317,7 +1380,6 @@ class AnimaisModel
             $stmt->bindParam(':id_proprietario', $post->id_proprietario, PDO::PARAM_INT);
             $stmt->bindParam(':ID_USUARIO_ATUALIZACAO', $post->id_usuario, PDO::PARAM_INT);
 
-
             $stmt->bindParam(':id_tipo_animal', $post->id_tipo_animal);
             $stmt->bindParam(':id_situacao', $post->id_situacao);
             $stmt->bindParam(':id_raca', $post->id_raca);
@@ -1355,7 +1417,6 @@ class AnimaisModel
             return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
         }
         $connect->commit();
-
 
         $_SESSION['debug'] = "Animal de registro [{$post->id_animal}] ATUALIZADO!";
         
@@ -1507,6 +1568,63 @@ class AnimaisModel
         }
 
         return sucesso("{$stmt->rowCount()} RESULTADOS ENCONTRADOS!", $stmt->fetchAll(PDO::FETCH_OBJ));
+    }
+
+
+
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    /**
+	 * Método pais()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+    public function pais(ServerRequestInterface $request) {
+
+        $post = (object)$request->getParsedBody();
+
+        $connect = $this->conn->conectar();
+        if( !is_numeric($post->id_sexo) ) return erro('campo [SEXO] inválido! #0'); # Não Informado(1), Macho(2), Fêmea(3)
+
+        if( !in_array($post->id_sexo, [0, 2, 3]) ) return erro('campo [SEXO] inválido!'); # Não Informado(1), Macho(2), Fêmea(3)
+
+        $SUBQUERY_SEXO = $post->id_sexo > 0 ? " AND id_sexo = '{$post->id_sexo}' " : " AND id_sexo IN (2, 3) ";
+
+        $query =
+		"   SELECT 
+                id_animal, nome, id_sexo
+            FROM tab_animais
+            WHERE (
+                id_usuario_sistema = :id_proprietario
+                AND id_situacao_vida = '15' -- VIVOS
+                {$SUBQUERY_SEXO}
+                AND id_situacao = '1'
+            )
+            ORDER BY nome ASC
+		";
+        $stmt = $connect->prepare($query);
+        if(!$stmt) {
+            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+        }
+        
+        // $stmt->bindParam(':id_sexo', $post->id_sexo, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proprietario', $post->id_proprietario, PDO::PARAM_INT);
+
+        if( !$stmt->execute() ) {
+            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+        }
+        if ( $stmt->rowCount() <= 0 ) {   
+            return erro("NENHUM RESULTADO ENCONTRADO!", 404);
+        }
+
+        $array_sexos = [
+            0 => 'MACHOS E FÊMEAS',
+            1 => 'SEXO NÃO INFORMADO',
+            2 => 'MACHOS',
+            3 => 'FÊMEAS'
+        ];
+
+        return sucesso("{$stmt->rowCount()} RESULTADOS ENCONTRADOS! ({$array_sexos[$post->id_sexo]})", $stmt->fetchAll(PDO::FETCH_OBJ));
     }
 
 } # AnimaisModel {}

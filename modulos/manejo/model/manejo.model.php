@@ -162,7 +162,7 @@ class ManejoModel
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->execute();  
             
-            if ($res->rowCount() <= 0 ) return erro("Nenhum Local foi localizado!", 200);
+            if ($res->rowCount() <= 0 ) return erro("NENHUM RESULTADO ENCONTRADO!", 404);
 
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
 
@@ -176,7 +176,10 @@ class ManejoModel
             $somatorio = [
                 "TOTAL_ANIMAIS_LOCAIS" => $totalizador             
             ];
-            return sucesso("", ["dados"=>$dados, "resumo"=> $somatorio]);
+
+
+
+            return sucesso("{$res->rowCount()} REGISTROS ENCONTRADOS!", ["dados"=>$dados, "resumo"=> $somatorio]);
         } 
         catch (\Throwable $th) {
             throw new Exception($th->getMessage(), (int)$th->getCode());
@@ -245,6 +248,9 @@ class ManejoModel
     }
 
 
+
+
+
     /**
 	 * Método cadastro_localizacao()
 	 * @author Antonio Ferreira <@toniferreirasantos>
@@ -252,29 +258,124 @@ class ManejoModel
 	*/
 	public function cadastro_localizacao(ServerRequestInterface $request) {
         
-        # CONTINUAR...
         $post = (object)$request->getParsedBody();
 
         if( vazio($post->descricao) ) return erro("Campo [DESCRIÇÃO] Obrigatório!");
         if( strlen($post->descricao) < 3 ) return erro("Campo [DESCRIÇÃO] inválido!");
 
-        if( strlen($post->lotacao_maxima) < 1 || !is_numeric($post->lotacao_maxima) ) return erro("Campo [LOTAÇÃO MÁXIMA] inválido!");
+        if( 
+            strlen($post->lotacao_maxima) < 1
+            || !is_numeric($post->lotacao_maxima)
+            || (int)$post->lotacao_maxima < 0
+        )  {
+            return erro("Campo [LOTAÇÃO MÁXIMA] inválido!");
+        }
 
-        // $post->id_situacao
-        // $post->id_filial
-        // $post->id_arrendado
-        // $post->informacao_adicional
+        if( !in_array($post->id_arrendado, [10, 20]) ) return erro("Campo [ARRENDADO] inválido!");
+        if( !in_array($post->id_situacao, [1, 2]) ) return erro("Campo [SITUAÇÃO] inválido!");
+
+        if( 
+            (int)$post->id_filial < 0 ||
+            !vazio($post->id_filial) &&
+            !is_numeric($post->id_filial)
+        )  {
+            return erro("Campo [FILIAL] inválido!");
+        }
+
+        $post->id_filial = !vazio($post->id_filial) ? $post->id_filial : 0;
+
+
+
+        $connect = $this->conn->conectar();
+        $query =
+        "   SELECT id_localizacao FROM tab_localizacoes
+            WHERE (
+                descricao = :descricao AND
+                id_usuario_sistema = :id_usuario_sistema
+            )
+        ";
+        $stmt = $connect->prepare($query);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+        $stmt->bindParam(':descricao', $post->descricao);
+        $stmt->bindParam(':id_usuario_sistema', $post->id_proprietario, PDO::PARAM_INT);
+
+        if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[2], 500);
+		}
+		if ( $stmt->rowCount() > 0 ) {
+			return erro("LOCALIZAÇÃO NÃO CADASTRADA - Já existe um local cadastrado com a descrição '{$post->descricao}'!");
+		}
+
+
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	
+		$connect->beginTransaction();
+
+		$query_insert =
+		"  INSERT INTO tab_localizacoes (
+                id_filial,
+                descricao,
+                id_situacao,
+                id_arrendado,
+                lotacao_maxima,
+
+                id_usuario_sistema,
+                informacao_adicional,
+                
+                DATA_CRIACAO,
+                DATA_ATUALIZACAO,
+
+                ID_USUARIO_CRIACAO,
+                ID_USUARIO_ATUALIZACAO
+			) 
+			VALUES (
+                :id_filial,
+                upper(:descricao),
+                :id_situacao,
+                :id_arrendado,
+                :lotacao_maxima,
+
+                :id_usuario_sistema, -- DONO DO HARAS / FAZENDA / EMPRESA
+                :informacao_adicional,
+                
+                CURDATE(), -- DATA_CRIACAO,
+                CURDATE(), -- DATA_ATUALIZACAO,
+
+                :ID_USUARIO_CRIACAO,
+                :ID_USUARIO_ATUALIZACAO
+			)
+		";
+		$stmt = $connect->prepare($query_insert);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+        $stmt->bindParam(':id_filial', $post->id_filial, PDO::PARAM_INT);
+        $stmt->bindParam(':descricao', $post->descricao);
+        $stmt->bindParam(':id_situacao', $post->id_situacao, PDO::PARAM_INT);
+        $stmt->bindParam(':id_arrendado', $post->id_arrendado, PDO::PARAM_INT);
+        $stmt->bindParam(':lotacao_maxima', $post->lotacao_maxima, PDO::PARAM_INT);
+
+        $stmt->bindParam(':id_usuario_sistema', $post->id_proprietario, PDO::PARAM_INT);
+        $stmt->bindParam(':informacao_adicional', $post->informacao_adicional);
+
+		$stmt->bindParam(':ID_USUARIO_CRIACAO', $post->id_usuario, PDO::PARAM_INT);
+		$stmt->bindParam(':ID_USUARIO_ATUALIZACAO', $post->id_usuario, PDO::PARAM_INT);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ !modo_dev() ? 1 : 2 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			return erro("Localização não cadastrada!");
+		}
         
-        // DATA_ATUALIZACAO
-        // DATA_CRIACAO
-        // ID_USUARIO_CRIACAO
-        // ID_USUARIO_ATUALIZACAO
-        // id_usuario_sistema
-
-        
-		
-
-        return sucesso("Implementando Cadastro de localizações! Aguarde...", $post);
+		msg_debug("LOCALIZAÇÃO [{$connect->lastInsertId()}] CADASTRADA!");
+        $connect->commit();
+        return sucesso("LOCALIZAÇÃO CADASTRADA COM SUCESSO!", $post);
     }
 
 

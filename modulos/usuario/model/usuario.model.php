@@ -330,6 +330,7 @@ class UsuarioModel
 		}
 
 		$usuario = $stmt->fetch(PDO::FETCH_OBJ);
+		$dados = [];
 		
 		$usuario->CAMPOS_ADICIONAIS = (object)[];
 		$usuario->CAMPOS_ADICIONAIS->PRIMEIRO_NOME_USUARIO = $usuario->PRIMEIRO_NOME_USUARIO;
@@ -351,8 +352,9 @@ class UsuarioModel
 		$usuario->rg_ie = (string)$usuario->rg_ie;
 		$usuario->Numero = (string)$usuario->Numero;
 		$usuario->CAMPOS_ADICIONAIS->LOCALIZACAO = "{$usuario->nome_cidade}/{$usuario->sigla_estado}";
-
-		return sucesso("Usuário encontrado! -> {$usuario->nome_razao_social}", $usuario);
+		$dados[] = $usuario;
+		
+		return sucesso("Usuário encontrado! -> {$usuario->nome_razao_social}", (array)["dados" => (array)$dados]);
 	}
 
 

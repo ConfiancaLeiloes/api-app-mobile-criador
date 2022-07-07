@@ -2,7 +2,6 @@
 
 // $app->get('/modulo/medodo', ClienteController::class . ':metodo');
 
-
 $modulos = [
 	'negocios' => [
 		ClienteController::class
