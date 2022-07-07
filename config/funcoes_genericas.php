@@ -272,10 +272,10 @@ function intevalo_datas_estacoes_monta($id_estacao)
     );
   
   //Verifica a Estação  
-  @$quebra_estacao = explode("/",@$estacoes[@$id_estacao]);
+  $quebra_estacao = explode("/",$estacoes[$id_estacao]);
 
   //Monta o Intervalo de Datas
-  return "'" . @$quebra_estacao[0] . "-07-01' AND '" . @$quebra_estacao[1] . "-06-30'";
+  return "'" . $quebra_estacao[0] . "-07-01' AND '" . $quebra_estacao[1] . "-06-30'";
   
 }
 
@@ -309,6 +309,7 @@ function get_estacao_monta($id_estacao)
   return $estacoes[$id_estacao];
   
 }
+
 
 // Função para obter o ID da Estação de Monta pela Data
 function estacao_monta($data_estacao)
@@ -352,4 +353,3 @@ function estacao_monta($data_estacao)
   }
 
 }
-

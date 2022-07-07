@@ -95,15 +95,49 @@ class AnimaisController
         $resultado = $this->animais->menu_plantel($request);
         $response->getBody()->write($resultado);
         return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
-       
     }
 
 
-
+    /**
+	 * Método cadastro()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return object
+	*/
     public function cadastro(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $res = $this->animais->cadastro($request);
         $response->getBody()->write($res);
         return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
     }
+
+    
+    /**
+	 * Método categorias()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return object
+	*/
+    public function categorias(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $res = $this->animais->categorias();
+        $response->getBody()->write($res);
+        return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
+    }
+
+
+
+
+    /**
+	 * Método pais()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return object
+	*/
+    public function pais(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $res = $this->animais->pais($request);
+        $response->getBody()->write($res);
+        return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
+    }
+
+
+ 
 }

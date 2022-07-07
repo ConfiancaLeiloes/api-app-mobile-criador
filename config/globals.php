@@ -1,5 +1,5 @@
 <?php
-error_reporting(null);
+
 $REQUEST_URI = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $request_method = strtolower($_SERVER['REQUEST_METHOD']);
 $REQUEST_METHOD = strtoupper($_SERVER['REQUEST_METHOD']);
@@ -22,6 +22,9 @@ define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/
 
 
 define('PATH_CDN', '/home/wwgrup/cdn');
+
+# Caminho onde as imagens dos animais serão cadastradas
+define('PATH_UPLOAD_FOTOS', $_SERVER['DOCUMENT_ROOT'] . '/tests/imgs'); # Provisório -> Para testes
 
 // $DB_MYSQL   = 'gc_confianca_criador';
 // $HOST_MYSQL = 'confiancacriador.digital';

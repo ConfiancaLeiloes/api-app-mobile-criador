@@ -8,6 +8,9 @@
  * @return 
 */
 function modo_dev() {
+
+  // return false;
+
   return
     isset($_GET['debug']) ||
     isset($_GET['modo_dev']) ||
@@ -23,6 +26,22 @@ function modo_dev() {
 function type_request($type = '') { 
   return REQUEST_METHOD === strtoupper($type) ? true : false;
 }
+
+
+
+/**
+ * Função msg_debug
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return void
+*/
+function msg_debug($msg = '') { 
+  
+  if ( !empty($msg) ) {
+    $_SESSION['debug'] = $msg;
+  }
+}
+
+
 
 
 /**
@@ -70,7 +89,9 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   //   }
   // }
 
-  return json_encode([
+  
+
+  $retorno = [
     'codigo' => (boolean)$resultado,
     'message' => $mensagem,
     
@@ -79,10 +100,18 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
     
     'http_status_code' => $http_status_code,
     'modo_dev' => modo_dev(),
-    'data_hora_requisicao' => DATA_HORA_ATUAL,
-    
-    'data' => $dados
-  ]);
+    'data_hora_requisicao' => DATA_HORA_ATUAL
+  ];
+
+
+  if ( isset($_SESSION['debug']) ) {
+    $retorno['debug'] = $_SESSION['debug'];
+  }
+
+  $retorno['data'] = $dados;
+
+
+  return json_encode($retorno);
 
 }
 

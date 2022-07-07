@@ -137,7 +137,7 @@ class NegociosModel
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->execute();  
             
-            if ($res->rowCount() <= 0 ) return erro("Nenhum Negócio foi localizado!");
+            if ($res->rowCount() <= 0 ) return erro("Nenhum Negócio foi localizado!", 200);
 
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
 
@@ -276,6 +276,216 @@ class NegociosModel
                 "PERIODO_DATA_FINAL" => $data_final
             ];
             return sucesso("", ["dados"=>$dados, "resumo"=> $somatorio]);
+        } 
+        catch (\Throwable $th) {
+            throw new Exception($th->getMessage(), (int)$th->getCode());
+        }        
+    }
+    public function listar_clientes(ServerRequestInterface $request)
+    {
+        $params = (array)$request->getParsedBody();
+        $id_proprietario    = $params['id_proprietario'];
+        $palavra_chave      = $params['palavra_chave'];
+        
+        if (!@$id_proprietario)
+         return erro("Parâmetros inválidos ou faltantes!");
+
+        try {
+
+            $query_sql = 
+                        "SELECT  
+                        tab_pessoas.id_pessoa as ID_CLIENTE, 
+                        tab_pessoas.nome_razao_social as NOME_CLIENTE, 
+                        tab_sexos.sexo_pessoa as SEXO_CLIENTE, 
+                        tab_pessoas.cpf_cnpj as CPF_CNPJ_CLIENTE, 
+                        tab_pessoas.telefone_fixo as TELEFONE_FIXO_CLIENTE, 
+                        tab_pessoas.telefone_celular as TELEFONE_CELULAR_CLIENTE, 
+                        tab_pessoas.email_usuario as EMAIL_CLIENTE, 
+                        tab_pessoas.logradouro as RUA_CLIENTE, 
+                        tab_pessoas.numero as NUMERO_CLIENTE, 
+                        tab_pessoas.complemento as COMPLEMENTO_CLIENTE, 
+                        tab_pessoas.bairro as BAIRRO_CLIENTE, 
+                        tab_cidades.nome_cidade as CIDADE_CLIENTE,  
+                        tab_estados.sigla_estado as UF_CLIENTE,  
+                        tab_pessoas.cep as CEP_CLIENTE, 
+                        tab_pessoas.informacoes_diversas as INFORMACAO_CLIENTE,   
+                        (
+                            SELECT SUM(tab_parcelas.valor_original)  
+                            FROM tab_parcelas  
+                            JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber AND 
+                            tab_contas_pagar_receber.id_tipo_transacao = '92' AND tab_parcelas.id_situacao = '49'  
+                            WHERE tab_contas_pagar_receber.id_cliente_fornecedor = tab_pessoas.id_pessoa  
+                        ) AS VALOR_TOTAL_DEBITO_CLIENTE,  
+                        (
+                            SELECT SUM(tab_parcelas.valor_original)  
+                            FROM tab_parcelas  
+                            JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber AND 
+                            tab_contas_pagar_receber.id_tipo_transacao = '91' AND tab_parcelas.id_situacao = '49'  
+                            WHERE tab_contas_pagar_receber.id_cliente_fornecedor = tab_pessoas.id_pessoa  
+                        ) AS VALOR_TOTAL_CREDITO_CLIENTE,  
+                        (
+                            SELECT COUNT(tab_parcelas.id_parcela)  
+                            FROM tab_parcelas  
+                            JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber AND 
+                            tab_parcelas.id_situacao = '49' AND CURDATE() > tab_parcelas.data_vencimento  
+                            WHERE tab_contas_pagar_receber.id_cliente_fornecedor = tab_pessoas.id_pessoa  
+                        ) AS PARCELA_EM_ATRASO  
+                    FROM tab_pessoas 
+                    JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_pessoas.id_situacao  
+                    LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade  
+                    LEFT JOIN tab_estados ON tab_estados.id_estado = tab_pessoas.id_estado  
+                    JOIN tab_sexos ON tab_sexos.id_sexo = tab_pessoas.id_sexo  
+                    WHERE   
+                        ( 
+                            tab_pessoas.nome_razao_social LIKE '%$palavra_chave%' OR  
+                            tab_pessoas.cpf_cnpj LIKE '%$palavra_chave%' OR  
+                            tab_pessoas.telefone_fixo LIKE '%$palavra_chave%' OR  
+                            tab_pessoas.telefone_celular LIKE '%$palavra_chave%' OR  
+                            tab_pessoas.logradouro LIKE '%$palavra_chave%' OR  
+                            tab_pessoas.bairro LIKE '%$palavra_chave%' OR  
+                            tab_pessoas.email_usuario LIKE '%$palavra_chave%' OR  
+                            tab_cidades.nome_cidade LIKE '%$palavra_chave%' 
+                        ) AND  
+                        tab_pessoas.id_usuario_sistema = :ID_PROPRIETARIO AND
+                        NOT tab_pessoas.id_usuario_sistema = tab_pessoas.id_pessoa
+                    GROUP BY tab_pessoas.id_pessoa  
+                    ORDER BY nome_razao_social ASC";
+
+            $pdo = $this->conn->conectar();
+            $res = $pdo->prepare($query_sql);
+            $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
+            $res->execute();  
+            
+            if ($res->rowCount() <= 0 ) return erro("Nenhum Cliente foi localizado!", 200);
+
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
+
+            $clientes_devedores    = 0;
+            $valor_cliente_devedor = 0;
+            $clientes_credores     = 0;
+            $valor_cliente_credor  = 0;
+
+            foreach ($dados as $key => $value) {
+
+                // Soma os Clientes Devedores
+                if ($value['VALOR_TOTAL_DEBITO_CLIENTE'] > 0)
+                {
+                    $clientes_devedores++;
+                    $valor_cliente_devedor += $value['VALOR_TOTAL_DEBITO_CLIENTE'];
+                }
+
+                // Soma os Clientes Credores
+                if ($value['VALOR_TOTAL_CREDITO_CLIENTE'] > 0)
+                {
+                    $clientes_credores++;
+                    $valor_cliente_credor += $value['VALOR_TOTAL_CREDITO_CLIENTE'];
+                }
+
+                $dados[$key]['CONTADOR'] =  $key+1;
+                $dados[$key]['VALOR_TOTAL_ACERTO_CLIENTE'] = "R$ " . number_format($value['VALOR_TOTAL_DEBITO_CLIENTE'] - $value['VALOR_TOTAL_CREDITO_CLIENTE'],2,',','.');
+                $dados[$key]['VALOR_TOTAL_DEBITO_CLIENTE'] = "R$ " . number_format($value['VALOR_TOTAL_DEBITO_CLIENTE'],2,',','.');
+                $dados[$key]['VALOR_TOTAL_CREDITO_CLIENTE'] = "R$ " . number_format($value['VALOR_TOTAL_CREDITO_CLIENTE'],2,',','.');
+                
+            }
+            $somatorio = [
+                "TOTAL_GERAL_CLIENTES" => (int)$key+1,
+                "CLIENTES_COM_SALDO_DEVEDOR" => (int)$clientes_devedores,
+                "CLIENTES_COM_SALDO_CREDOR" => (int) $clientes_credores,
+                "VALOR_TOTAL_RECEBER" => "R$ " . number_format($valor_cliente_devedor,2,',','.'),               
+                "VALOR_TOTAL_PAGAR" => "R$ " . number_format($valor_cliente_credor,2,',','.'),
+                "VALOR_SALDO" => "R$ " . number_format($valor_cliente_devedor - $valor_cliente_credor,2,',','.')
+            ];
+            return sucesso("", ["dados"=>$dados, "resumo"=> $somatorio]);
+        } 
+        catch (\Throwable $th) {
+            throw new Exception($th->getMessage(), (int)$th->getCode());
+        }        
+    }
+    public function detalhes_negocio_compra_venda(ServerRequestInterface $request)
+    {
+        $params = (array)$request->getParsedBody();
+        $id_proprietario    = $params['id_proprietario'];
+        $id_negocio         = $params['id_negocio'];
+        
+        if (!@$id_proprietario || !@$id_negocio)
+         return erro("Negócio ou Proprietário com identificação incorreta!");
+
+        try {
+
+            $query_sql = 
+                        "SELECT  
+                        tab_compras_vendas_animais.id_compra_venda_animal as ID_NEGOCIO, 
+                        UPPER(tab_tipo_negocio.descricao) as TIPO_NEGOCIO, 
+                        DATE_FORMAT(tab_compras_vendas_animais.data_compra_venda, '%d/%m/%Y') as DATA_NEGOCIO,
+                        UPPER(tab_tipos_produtos_negocios.descricao_produto) as TIPO_PRODUTO_NEGOCIO, 
+                        IF(tab_compras_vendas_animais.id_tipo_produto = '4', tab_compras_vendas_animais.id_produto_embriao,tab_compras_vendas_animais.id_produto_animal) as ID_PRODUTO_NEGOCIO,
+                        IF( 
+                            tab_compras_vendas_animais.id_tipo_produto = '4', 
+                            CONCAT( 
+                            'Garanhão: ', UPPER(tab_garanhao.nome), 
+                            '\nDoadora/Matriz: ', UPPER(tab_doadora.nome), 
+                            '\nData de Cobrição: ', IF(tab_cobricoes.id_disponibilidade = '76', CONCAT(DATE_FORMAT(tab_cobricoes.data_cobertura, '%d/%m/%Y'),' - Parto Previsto: ',DATE_FORMAT(ADDDATE(tab_cobricoes.data_cobertura, INTERVAL 330 DAY),'%m/%Y')),'A DEFINIR'), 
+                            IF( 
+                                tab_cobricoes.id_te = '18', 
+                                CONCAT('\nReceptora: ',UPPER(tab_receptora.marca), ' - ', UPPER(tab_receptora.nome)), 
+                                '' 
+                                ), 
+                                '\nDisponibilidade: ',UPPER(tab_disponibilidade.descricao),  
+                                IF( 
+                                    NOT tab_sexagens.id_resultado_sexagem IS NULL, 
+                                    CONCAT('\nSexagem: ',UPPER(tab_sexo.descricao)), 
+                                    '\nSexagem: NÃO SEXADO' 
+                                ) 
+                            ), 
+                        CONCAT(UPPER(tab_animais.nome),'\nPai: ',IF(ISNULL(tab_pai.nome),'DESCONHECIDO',UPPER(tab_pai.nome)),' X ','Mãe: ',IF(ISNULL(tab_mae.nome),'DESCONHECIDA',UPPER(tab_mae.nome))) 
+                        ) as DESCRICAO_PRODUTO_NEGOCIO, 
+                        CONCAT(UPPER(tab_pessoas.nome_razao_social),'\nTelefone: ',IF(ISNULL(tab_pessoas.telefone_celular) OR TRIM(tab_pessoas.telefone_celular) = '','SEM NÚMERO',tab_pessoas.telefone_celular), '\nE-mail: ',IF(ISNULL(tab_pessoas.email_usuario) OR TRIM(tab_pessoas.email_usuario) = '','SEM E-MAIL',tab_pessoas.email_usuario)) as NOME_COMPRADOR_VENDEDOR_NEGOCIO,  
+                        UPPER(tab_eventos_equestres.nome_evento) as NOME_EVENTO_COMPRA_VENDA,  
+                        FORMAT(tab_compras_vendas_animais.quantidade_compra_venda, 2, 'de_DE') as QUANTIDADE_NEGOCIO, 
+                        CONCAT(FORMAT(tab_compras_vendas_animais.cotas_compra_venda, 2, 'de_DE'),'%') as COTAS_NEGOCIO, 
+                        CONCAT('R$ ',FORMAT(tab_compras_vendas_animais.valor_total, 2, 'de_DE')) as VALOR_TOTAL_NEGOCIO,
+                        UPPER(tab_situacao_entrega_recebimento.descricao) as SITUACAO_ENTREGA_RECEBIMENTO_NEGOCIO, 
+                        UPPER(tab_situacao_negocio.descricao) as SITUACAO_NEGOCIO,
+                        IF(ISNULL(tab_compras_vendas_animais.id_financeiro),'FINANCEIRO NÃO GERADO', 'FINANCEIRO GERADO')as SITUACAO_FINANCEIRO_NEGOCIO,
+                        tab_compras_vendas_animais.total_parcelas as TOTAL_PARCELAS_NEGOCIO,
+                        IF(ISNULL(tab_compras_vendas_animais.composicao_parcelas) OR TRIM(tab_compras_vendas_animais.composicao_parcelas) = '','NÃO INFORMADO',tab_compras_vendas_animais.composicao_parcelas) as COMPOSICAO_PARCELAS_NEGOCIO,
+                        CONCAT(CONCAT('R$ ',FORMAT(tab_compras_vendas_animais.valor_total * (tab_compras_vendas_animais.comissao_compra_venda / 100), 2, 'de_DE')), ' (',FORMAT(tab_compras_vendas_animais.comissao_compra_venda, 2, 'de_DE'),'%)') as COMISSAO_NEGOCIO,
+                        CONCAT('R$ ',FORMAT(tab_compras_vendas_animais.inscricao_leilao, 2, 'de_DE')) as VALOR_INSCRICAO_NEGOCIO,
+                        IF(ISNULL(tab_compras_vendas_animais.informacoes_diversas) OR TRIM(tab_compras_vendas_animais.informacoes_diversas) = '','SEM INFORMAÇÕES ADICIONAIS',tab_compras_vendas_animais.informacoes_diversas) as INFORMACAO_NEGOCIO
+                    FROM tab_compras_vendas_animais  
+                        JOIN tab_pessoas ON tab_pessoas.id_pessoa = tab_compras_vendas_animais.id_comprador_vendedor  
+                        JOIN tab_tipos_produtos_negocios ON tab_tipos_produtos_negocios.id_produto_negocio = tab_compras_vendas_animais.id_tipo_produto  
+                        JOIN tab_eventos_equestres ON tab_eventos_equestres.id_evento_equestre = tab_compras_vendas_animais.id_evento_compra_venda  
+                        JOIN tab_situacoes AS tab_tipo_negocio ON tab_tipo_negocio.id_situacao = tab_compras_vendas_animais.id_tipo_negocio
+                        JOIN tab_situacoes AS tab_situacao_entrega_recebimento ON tab_situacao_entrega_recebimento.id_situacao = tab_compras_vendas_animais.id_situacao_recebimento_entrega
+                        JOIN tab_situacoes AS tab_situacao_negocio ON tab_situacao_negocio.id_situacao = tab_compras_vendas_animais.id_situacao_negocio
+                        LEFT JOIN tab_animais ON tab_animais.id_animal = tab_compras_vendas_animais.id_produto_animal  
+                        LEFT JOIN tab_cobricoes ON tab_cobricoes.id_cobricao = tab_compras_vendas_animais.id_produto_embriao  
+                        LEFT JOIN tab_animais AS tab_pai ON tab_pai.id_animal = tab_animais.id_pai  
+                        LEFT JOIN tab_animais AS tab_mae ON tab_mae.id_animal = tab_animais.id_mae 
+                        LEFT JOIN tab_animais AS tab_garanhao ON tab_garanhao.id_animal = tab_cobricoes.id_animal_macho  
+                        LEFT JOIN tab_animais AS tab_doadora ON tab_doadora.id_animal = tab_cobricoes.id_animal_femea  
+                        LEFT JOIN tab_animais AS tab_receptora ON tab_receptora.id_animal = tab_cobricoes.id_animal_receptora  
+                        LEFT JOIN tab_toques ON tab_toques.id_cobricao_relacionada = tab_cobricoes.id_cobricao  
+                        LEFT JOIN tab_situacoes AS tab_disponibilidade ON tab_disponibilidade.id_situacao = tab_cobricoes.id_disponibilidade  
+                        LEFT JOIN tab_sexagens ON tab_sexagens.id_cobricao_relacionada = tab_cobricoes.id_cobricao  
+                        LEFT JOIN tab_situacoes AS tab_sexo ON tab_sexo.id_situacao = tab_sexagens.id_resultado_sexagem 
+                    WHERE
+                        tab_compras_vendas_animais.id_compra_venda_animal = :ID_NEGOCIO AND tab_compras_vendas_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                    GROUP BY  tab_compras_vendas_animais.id_compra_venda_animal
+                    ORDER BY tab_compras_vendas_animais.data_compra_venda ASC";
+
+            $pdo = $this->conn->conectar();
+            $res = $pdo->prepare($query_sql);
+            $res->bindValue(':ID_NEGOCIO', $id_negocio);
+            $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
+            $res->execute();  
+            
+            if ($res->rowCount() <= 0 ) return erro("Negócio ou Proprietário com identificação incorreta!");
+
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
+
+            return sucesso("", ["dados"=>$dados]);
         } 
         catch (\Throwable $th) {
             throw new Exception($th->getMessage(), (int)$th->getCode());

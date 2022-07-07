@@ -404,7 +404,7 @@ class ReproducaoModel
             $res->execute();
 
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);    
-            if (count($dados) <= 0) return  $resposta = json_encode(["codigo" => false,"status" => false, "message" => "Nenhuma Cobrição foi localizada!", "data" => ""]);
+            if (count($dados) <= 0) return erro("Nenhuma Cobrição foi localizada!");
             
             $sem_toque = 0;
             $positivo = 0;
