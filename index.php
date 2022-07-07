@@ -63,6 +63,10 @@ if (
 	UsuarioController::valida_token();
 }
 try {
+
+    # ROTAS DE LOGIN
+    require_once ('./modulos/usuario/rotas.php');
+
     # ROTAS DE ANIMAIS
     require_once ('./modulos/animais/rotas.php');
 
@@ -74,10 +78,6 @@ try {
 
     # ROTAS DE MANEJOS
     require_once ('./modulos/manejo/rotas.php');
-
-    # ROTAS DE MANEJOS
-    require_once ('./modulos/negocios/rotas.php');
-
     
 
     $app->run();

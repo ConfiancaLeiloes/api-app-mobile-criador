@@ -90,10 +90,10 @@ class UsuarioController
 		
 		// $post = (object)$_POST;
 		$post = body_params();
-
-		if ( modo_dev() ) {
-			print_r($objeto); exit;
-		}
+		// $objeto = [];
+		// if ( modo_dev() ) {
+		// 	print_r($objeto); exit;
+		// }
 
 
 		$msg_erro = '';
