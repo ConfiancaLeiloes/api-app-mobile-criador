@@ -86,11 +86,7 @@ class AnimaisModel
             return sucesso("{$stmt->rowCount()} resultado(s) encontrado(s)",["dados"=>$stmt->fetchAll(PDO::FETCH_OBJ)]);
         } 
         catch (\Throwable $th) {
-            throw new Exception($th);
-        }
-        catch (customException $e) {
-            //display custom message
-            echo $e->errorMessage();
+            throw new Exception($th->getMessage, (int)$th->getCode);
         }
         
     }
@@ -127,7 +123,7 @@ class AnimaisModel
                 $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($dados) <= 0) return erro("Nenhum Exame foi localizado!", []);
+                if (count($dados) <= 0) return sucesso("Nenhum Exame foi localizado!");
                 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
@@ -184,7 +180,7 @@ class AnimaisModel
                 $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($dados) <= 0) return erro("Nenhum animal foi localizado!", []);
+                if (count($dados) <= 0) return sucesso("Nenhum animal foi localizado!");
                 
                 $total_machos = 0;
                 $total_femeas = 0;
@@ -214,7 +210,7 @@ class AnimaisModel
         $params = (array)$request->getParsedBody();
         $id_animal = $params['id_animal'];
 
-        if (!$id_animal) return erro("Animal com identificação incorreta!", []);
+        if (!$id_animal) return erro("Animal com identificação incorreta!");
         try {
             $query_sql = 
                         "SELECT 
@@ -244,7 +240,7 @@ class AnimaisModel
                 $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($dados) <= 0) return erro("Animal com identificação incorreta!");
+                if (count($dados) <= 0) return sucesso("Animal com identificação incorreta!");
 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
@@ -258,7 +254,7 @@ class AnimaisModel
         $id_animal          = $params['id_animal'];
         $id_proprietario    = $params['id_proprietario'];
 
-        if (!$id_animal || !$id_proprietario) return erro("Animal ou Haras com identificação incorreta!", []);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Haras com identificação incorreta!");
         try {
             $query_sql = 
                         "SELECT  
@@ -288,7 +284,7 @@ class AnimaisModel
                 $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($dados) <= 0) return erro("Nenhuma Movimentação foi localizada!", []);
+                if (count($dados) <= 0) return sucesso("Nenhuma Movimentação foi localizada!");
 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
@@ -374,7 +370,7 @@ class AnimaisModel
                 $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($dados) <= 0) return erro("Animal ou Proprietário com identificação incorreta!", []);
+                if (count($dados) <= 0) return sucesso("Animal ou Proprietário com identificação incorreta!");
                 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
@@ -389,7 +385,7 @@ class AnimaisModel
         $id_proprietario    = $params['id_proprietario'];
         $url_fotos          = URL_FOTOS;
 
-        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!", []);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!");
         
         try {
             $query_sql = 
@@ -509,7 +505,7 @@ class AnimaisModel
                 $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($dados) <= 0) return erro("Animal ou Proprietário com identificação incorreta!", []);
+                if (count($dados) <= 0) return erro("Animal ou Proprietário com identificação incorreta!");
                 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
@@ -552,7 +548,7 @@ class AnimaisModel
                 $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-                if (count($dados) <= 0) return erro("Nenhum Controle Sanitário foi localizado!", []);
+                if (count($dados) <= 0) return sucesso("Nenhum Controle Sanitário foi localizado!");
 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
@@ -566,7 +562,7 @@ class AnimaisModel
         $id_animal          = $params['id_animal'];
         $id_proprietario    = $params['id_proprietario'];
 
-        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!", []);
+        if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!");
         try {
             $query_sql = 
                         "SELECT * FROM 
@@ -712,7 +708,7 @@ class AnimaisModel
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
 
-            if (count($dados) <= 0) return  erro("Nenhum Sócio foi localizado!", []);
+            if (count($dados) <= 0) return  sucesso("Nenhum Sócio foi localizado!");
 
             return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
@@ -905,7 +901,7 @@ class AnimaisModel
         $params = (array)$request->getParsedBody();
         $id_proprietario    = @$params['id_proprietario'];
 
-        if (!@$id_proprietario) return erro("Haras com identificação incorreta!", []);
+        if (!@$id_proprietario) return erro("Haras com identificação incorreta!");
         
         try {
 
@@ -937,7 +933,7 @@ class AnimaisModel
             $res->execute();
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
-            if (count($dados) <= 0) return erro("Você ainda não possui nenhum animal cadastrado em seu Plantel!", []);
+            if (count($dados) <= 0) return sucesso("Você ainda não possui nenhum animal cadastrado em seu Plantel!");
                     
             return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
@@ -951,7 +947,7 @@ class AnimaisModel
         $id_proprietario    = @$params['id_proprietario'];
         $id_raca            = @$params['id_raca'];
 
-        if (!@$id_proprietario) return erro("Haras com identificação incorreta!", []);
+        if (!@$id_proprietario) return erro("Haras com identificação incorreta!");
         try {
 
             $filtro_raca = $id_raca ? "tab_animais.id_raca = {$id_raca} AND" : ''; 
@@ -981,7 +977,7 @@ class AnimaisModel
             $res->execute();
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
-            if (count($dados) <= 0) return erro("Você ainda não possui nenhum animal cadastrado em seu Plantel!", []);
+            if (count($dados) <= 0) return sucesso("Você ainda não possui nenhum animal cadastrado em seu Plantel!");
             //$resposta = json_encode(["codigo" => false,"status" => false, "message" => "Você ainda não possui nenhum animal cadastrado em seu Plantel!", "data" => ""]);
             
             $totalizador = 0;
