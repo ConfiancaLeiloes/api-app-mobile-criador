@@ -25,8 +25,8 @@ require_once __DIR__.'/modulos/manejo/controller/manejo.controller.php';
 require_once __DIR__.'/modulos/negocios/model/negocios.model.php';
 require_once __DIR__.'/modulos/negocios/controller/negocios.controller.php';
 
-// require_once __DIR__.'/modulos/usuario/model/usuario.model.php';
-// require_once __DIR__.'/modulos/usuario/controller/usuario.controller.php';
+require_once __DIR__.'/modulos/financeiro/model/financeiro.model.php';
+require_once __DIR__.'/modulos/financeiro/controller/financeiro.controller.php';
 
 require_once __DIR__.'/modulos/usuario/model/usuario.model.php';
 require_once __DIR__.'/modulos/usuario/controller/usuario.controller.php';

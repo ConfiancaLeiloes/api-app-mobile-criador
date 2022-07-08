@@ -64,22 +64,8 @@ if (
 }
 try {
 
-    # ROTAS DE LOGIN
-    require_once ('./modulos/usuario/rotas.php');
-
-    # ROTAS DE ANIMAIS
-    require_once ('./modulos/animais/rotas.php');
-
-    # ROTAS DE FINANCEIRO
-    //require_once ('./modulos/financeiro/rotas.php');
-
-    # ROTAS DE NEGOCIOS
-    require_once ('./modulos/negocios/rotas.php');
-
-    # ROTAS DE MANEJOS
-    require_once ('./modulos/manejo/rotas.php');
+    require 'rotas.php';
     
-
     $app->run();
 } catch (\Throwable $th) {
     @header("Status: 500 Rota não encontrada");
