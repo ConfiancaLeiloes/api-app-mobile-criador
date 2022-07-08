@@ -64,7 +64,7 @@ class SanitarioModel
             $res->execute();            
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
-            if (count($dados) <= 0) return erro("Nenhum Controle Sanitário foi localizado!");
+            if (count($dados) <= 0) return erro("Nenhum Controle Sanitário foi localizado!", 200);
             
             $situacao_agendado  = 0;
             $situacao_executado = 0;
@@ -151,7 +151,7 @@ class SanitarioModel
             $res->execute();            
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
                 
-            if (count($dados) <= 0) return erro("Nenhum Exame foi localizado!");
+            if (count($dados) <= 0) return erro("Nenhum Exame foi localizado!", 200);
             
             $resultado_positivo      = 0;
             $resultado_negativo      = 0;

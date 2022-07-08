@@ -103,6 +103,10 @@ class ManejoModel
             throw new Exception($th->getMessage(), (int)$th->getCode());
         }        
     }
+
+
+
+
     public function listar_locais(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -114,39 +118,43 @@ class ManejoModel
         try {
 
             $query_sql = 
-                        "SELECT  
-                        tab_localizacoes.id_localizacao as ID_LOCAL, 
-                        tab_localizacoes.descricao as NOME_LOCAL, 
-                        tab_localizacoes.lotacao_maxima as LOTACAO_MAXIMA_LOCAL,   
+            "   SELECT  
+                    tab_localizacoes.id_localizacao as ID_LOCAL, 
+                    tab_localizacoes.descricao as NOME_LOCAL, 
+                    tab_localizacoes.lotacao_maxima as LOTACAO_MAXIMA_LOCAL,   
+                    (
+                        COUNT(tab_animais.id_localizacao) - 
                         (
-                            COUNT(tab_animais.id_localizacao) - 
-                            (
-                            SELECT  
-                            COUNT(tab_animais.id_animal)  
-                            FROM tab_animais  
-                                LEFT JOIN tab_compras_vendas_animais ON tab_compras_vendas_animais.id_produto_animal = tab_animais.id_animal  
-                            WHERE  
-                                tab_animais.id_localizacao = tab_localizacoes.id_localizacao  
-                                AND tab_compras_vendas_animais.id_situacao_recebimento_entrega = '39'  
-                                AND tab_compras_vendas_animais.id_tipo_produto = '1'
-                                AND tab_animais.id_situacao = '1' 
-                            )
-                        ) AS TOTAL_GERAL_ANIMAIS_LOCAL  
-                    FROM tab_localizacoes  
-                    JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_localizacoes.id_situacao  
-                    LEFT JOIN tab_animais ON tab_animais.id_localizacao = tab_localizacoes.id_localizacao  
-                        AND tab_animais.id_situacao_cadastro = '11' 
-                        AND tab_animais.id_situacao_vida = '15' 
-                        AND tab_animais.id_situacao = '1'
-                    WHERE  
-                        tab_localizacoes.id_situacao = '1' AND  
-                        ( 
-                            tab_localizacoes.descricao LIKE '%$palavra_chave%' OR  
-                            tab_localizacoes.informacao_adicional LIKE '%$palavra_chave%' 
-                        ) AND  
-                        tab_localizacoes.id_usuario_sistema = :ID_PROPRIETARIO
-                    GROUP BY tab_localizacoes.id_localizacao  
-                    ORDER BY tab_localizacoes.descricao ASC";
+                        SELECT  
+                        COUNT(tab_animais.id_animal)  
+                        FROM tab_animais  
+                            LEFT JOIN tab_compras_vendas_animais ON tab_compras_vendas_animais.id_produto_animal = tab_animais.id_animal  
+                        WHERE  
+                            tab_animais.id_localizacao = tab_localizacoes.id_localizacao  
+                            AND tab_compras_vendas_animais.id_situacao_recebimento_entrega = '39'  
+                            AND tab_compras_vendas_animais.id_tipo_produto = '1'
+                            AND tab_animais.id_situacao = '1' 
+                        )
+                    ) AS TOTAL_GERAL_ANIMAIS_LOCAL  
+                FROM tab_localizacoes  
+                JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_localizacoes.id_situacao  
+                LEFT JOIN tab_animais ON (
+                    tab_animais.id_localizacao = tab_localizacoes.id_localizacao  
+                    AND tab_animais.id_situacao_cadastro = '11' 
+                    AND tab_animais.id_situacao_vida = '15' 
+                    AND tab_animais.id_situacao = '1'
+                )
+                WHERE  (
+                    tab_localizacoes.id_situacao = '1' AND  
+                    ( 
+                        tab_localizacoes.descricao LIKE '%$palavra_chave%' OR  
+                        tab_localizacoes.informacao_adicional LIKE '%$palavra_chave%' 
+                    ) AND  
+                    tab_localizacoes.id_usuario_sistema = :ID_PROPRIETARIO
+                )
+                GROUP BY tab_localizacoes.id_localizacao  
+                ORDER BY tab_localizacoes.descricao ASC
+            ";
 
 
             $pdo = $this->conn->conectar();
@@ -154,7 +162,7 @@ class ManejoModel
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->execute();  
             
-            if ($res->rowCount() <= 0 ) return erro("Nenhum Local foi localizado!", 200);
+            if ($res->rowCount() <= 0 ) return erro("NENHUM RESULTADO ENCONTRADO!", 404);
 
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
 
@@ -168,12 +176,22 @@ class ManejoModel
             $somatorio = [
                 "TOTAL_ANIMAIS_LOCAIS" => $totalizador             
             ];
-            return sucesso("", ["dados"=>$dados, "resumo"=> $somatorio]);
+
+
+
+            return sucesso("{$res->rowCount()} REGISTROS ENCONTRADOS!", ["dados"=>$dados, "resumo"=> $somatorio]);
         } 
         catch (\Throwable $th) {
             throw new Exception($th->getMessage(), (int)$th->getCode());
         }        
     }
+
+
+
+
+
+
+
     public function listar_lotes(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -228,5 +246,138 @@ class ManejoModel
             throw new Exception($th->getMessage(), (int)$th->getCode());
         }        
     }
+
+
+
+
+
+    /**
+	 * Método cadastro_localizacao()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+	public function cadastro_localizacao(ServerRequestInterface $request) {
+        
+        $post = (object)$request->getParsedBody();
+
+        if( vazio($post->descricao) ) return erro("Campo [DESCRIÇÃO] Obrigatório!");
+        if( strlen($post->descricao) < 3 ) return erro("Campo [DESCRIÇÃO] inválido!");
+
+        if( 
+            strlen($post->lotacao_maxima) < 1
+            || !is_numeric($post->lotacao_maxima)
+            || (int)$post->lotacao_maxima < 0
+        )  {
+            return erro("Campo [LOTAÇÃO MÁXIMA] inválido!");
+        }
+
+        if( !in_array($post->id_arrendado, [10, 20]) ) return erro("Campo [ARRENDADO] inválido!");
+        if( !in_array($post->id_situacao, [1, 2]) ) return erro("Campo [SITUAÇÃO] inválido!");
+
+        if( 
+            (int)$post->id_filial < 0 ||
+            !vazio($post->id_filial) &&
+            !is_numeric($post->id_filial)
+        )  {
+            return erro("Campo [FILIAL] inválido!");
+        }
+
+        $post->id_filial = !vazio($post->id_filial) ? $post->id_filial : 0;
+
+
+
+        $connect = $this->conn->conectar();
+        $query =
+        "   SELECT id_localizacao FROM tab_localizacoes
+            WHERE (
+                descricao = :descricao AND
+                id_usuario_sistema = :id_usuario_sistema
+            )
+        ";
+        $stmt = $connect->prepare($query);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+        $stmt->bindParam(':descricao', $post->descricao);
+        $stmt->bindParam(':id_usuario_sistema', $post->id_proprietario, PDO::PARAM_INT);
+
+        if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[2], 500);
+		}
+		if ( $stmt->rowCount() > 0 ) {
+			return erro("LOCALIZAÇÃO NÃO CADASTRADA - Já existe um local cadastrado com a descrição '{$post->descricao}'!");
+		}
+
+
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	
+		$connect->beginTransaction();
+
+		$query_insert =
+		"  INSERT INTO tab_localizacoes (
+                id_filial,
+                descricao,
+                id_situacao,
+                id_arrendado,
+                lotacao_maxima,
+
+                id_usuario_sistema,
+                informacao_adicional,
+                
+                DATA_CRIACAO,
+                DATA_ATUALIZACAO,
+
+                ID_USUARIO_CRIACAO,
+                ID_USUARIO_ATUALIZACAO
+			) 
+			VALUES (
+                :id_filial,
+                upper(:descricao),
+                :id_situacao,
+                :id_arrendado,
+                :lotacao_maxima,
+
+                :id_usuario_sistema, -- DONO DO HARAS / FAZENDA / EMPRESA
+                :informacao_adicional,
+                
+                CURDATE(), -- DATA_CRIACAO,
+                CURDATE(), -- DATA_ATUALIZACAO,
+
+                :ID_USUARIO_CRIACAO,
+                :ID_USUARIO_ATUALIZACAO
+			)
+		";
+		$stmt = $connect->prepare($query_insert);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+
+        $stmt->bindParam(':id_filial', $post->id_filial, PDO::PARAM_INT);
+        $stmt->bindParam(':descricao', $post->descricao);
+        $stmt->bindParam(':id_situacao', $post->id_situacao, PDO::PARAM_INT);
+        $stmt->bindParam(':id_arrendado', $post->id_arrendado, PDO::PARAM_INT);
+        $stmt->bindParam(':lotacao_maxima', $post->lotacao_maxima, PDO::PARAM_INT);
+
+        $stmt->bindParam(':id_usuario_sistema', $post->id_proprietario, PDO::PARAM_INT);
+        $stmt->bindParam(':informacao_adicional', $post->informacao_adicional);
+
+		$stmt->bindParam(':ID_USUARIO_CRIACAO', $post->id_usuario, PDO::PARAM_INT);
+		$stmt->bindParam(':ID_USUARIO_ATUALIZACAO', $post->id_usuario, PDO::PARAM_INT);
+
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ !modo_dev() ? 1 : 2 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			return erro("Localização não cadastrada!");
+		}
+        
+		msg_debug("LOCALIZAÇÃO [{$connect->lastInsertId()}] CADASTRADA!");
+        $connect->commit();
+        return sucesso("LOCALIZAÇÃO CADASTRADA COM SUCESSO!", $post);
+    }
+
+
 
 }

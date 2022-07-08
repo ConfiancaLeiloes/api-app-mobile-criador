@@ -86,7 +86,11 @@ class AnimaisModel
             return sucesso("{$stmt->rowCount()} resultado(s) encontrado(s)",["dados"=>$stmt->fetchAll(PDO::FETCH_OBJ)]);
         } 
         catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
+        }
+        catch (customException $e) {
+            //display custom message
+            echo $e->errorMessage();
         }
         
     }
@@ -127,7 +131,7 @@ class AnimaisModel
                 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -201,7 +205,7 @@ class AnimaisModel
 
                 return sucesso("", ["dados"=>$dados, "resumo"=>$somatorio]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -244,7 +248,7 @@ class AnimaisModel
 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -288,7 +292,7 @@ class AnimaisModel
 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -374,7 +378,7 @@ class AnimaisModel
                 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -509,7 +513,7 @@ class AnimaisModel
                 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -552,7 +556,7 @@ class AnimaisModel
 
                 return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -712,7 +716,7 @@ class AnimaisModel
 
             return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -889,7 +893,7 @@ class AnimaisModel
             return sucesso("{$num_resultados} RESULTADOS ENCONTRADOS!", ["dados"=>$dados, "resumo"=>$somatorio]);
 
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -937,7 +941,7 @@ class AnimaisModel
                     
             return sucesso("", ["dados"=>$dados]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -993,7 +997,7 @@ class AnimaisModel
                 
             return sucesso("", ["dados"=>$dados, "resumo"=>$somatorio]);
         } catch (\Throwable $th) {
-            throw new Exception($th->getMessage(), (int)$th->getCode());
+            throw new Exception($th);
         }
         
     }
@@ -1014,25 +1018,27 @@ class AnimaisModel
 	/**
 	 * Método cadastro()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
+	 * @return function
 	*/
     public function cadastro(ServerRequestInterface $request) {
 
 		// $post = body_params()
         $post = (object)$request->getParsedBody();
-
-
         if( !in_array($post->id_situacao_cadastro, [11, 12]) ) return erro('campo [SITUAÇÃO/TIPO DE CADASTRO] inválido!');
 
+        # SE FOR CADASTRO DE ANIMAL AUXILIAR...
         if ( $post->id_situacao_cadastro == 12  ) {
-            
-            $post->id_raca = 1;
-            $post->id_vender = 13;
-            $post->id_pelagem = 1;
-            $post->id_situacao = 1;
-            $post->id_classificacao = 1;
-            $post->id_situacao_vida = 15;
+            $post->id_raca = 1; # Raça Não Informada)
+            $post->id_vender = 13; # Não vender
+            $post->id_pelagem = 1; # Pelagem desconhecida
+            $post->id_situacao = 1; # Ativo
+            $post->id_classificacao = 1; # Sem classificação
+            $post->id_situacao_vida = 15; # Vivo
+            $post->data_nascimento = '1970-01-01';
+            $post->id_situacao_macho_castrado = 6; # Inteiro(6) / Castrado
 
+            $post->id_criador = $post->id_proprietario;
+            $post->id_proprietario_animal = $post->id_proprietario;
         }
         
 
@@ -1090,17 +1096,17 @@ class AnimaisModel
 
         $post->id_localizacao = isset($post->id_localizacao) && !vazio($post->id_localizacao) ? $post->id_localizacao : NULL;
 
-        $post->chip                 = isset($post->chip) && !vazio($post->chip) ? $post->chip                                                 : NULL;
-        $post->marca                = isset($post->marca) && !vazio($post->marca) ? $post->marca                                              : 'SEM MARCA';
-        $post->valor_mercado        = isset($post->valor_mercado) && !vazio($post->valor_mercado) ? $post->valor_mercado                      : '0.00';
-        $post->grau_de_sangue       = isset($post->grau_de_sangue) && !vazio($post->grau_de_sangue) ? $post->grau_de_sangue                   : NULL;
-        $post->registro_associacao  = isset($post->registro_associacao) && !vazio($post->registro_associacao) ? $post->registro_associacao    : 'SEM REGISTRO';
+        $post->chip                 = isset($post->chip) && !vazio($post->chip) ? $post->chip : NULL;
+        $post->marca                = isset($post->marca) && !vazio($post->marca) ? $post->marca : 'SEM MARCA';
+        $post->valor_mercado        = isset($post->valor_mercado) && !vazio($post->valor_mercado) ? $post->valor_mercado : '0.00';
+        $post->grau_de_sangue       = isset($post->grau_de_sangue) && !vazio($post->grau_de_sangue) ? $post->grau_de_sangue : NULL;
+        $post->registro_associacao  = isset($post->registro_associacao) && !vazio($post->registro_associacao) ? $post->registro_associacao : 'SEM REGISTRO';
         $post->informacoes_diversas = isset($post->informacoes_diversas) && !vazio($post->informacoes_diversas) ? $post->informacoes_diversas : NULL;
 
         $post->id_dna = !vazio($post->id_dna) ? $post->id_dna : 75;
         $post->id_consignacao = !vazio($post->id_consignacao) ? $post->id_consignacao : 112;
 
-        return sucesso("MÉTODO EM MANUTENÇÃO!", $post);
+        // return sucesso("MÉTODO EM MANUTENÇÃO!", $post);
 
         if ( (int)$post->id_animal <= 0 ) {
             return $this->insert($post);
@@ -1132,7 +1138,7 @@ class AnimaisModel
     /**
 	 * Método insert()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
+	 * @return function
 	*/
     private function insert($post) {
 
@@ -1210,7 +1216,7 @@ class AnimaisModel
                 :data_nascimento,
                 :registro_associacao,
                 :chip,
-                :marca,
+                upper(:marca),
                 :grau_de_sangue,
                 :valor_mercado,
                 :informacoes_diversas,
@@ -1311,7 +1317,7 @@ class AnimaisModel
     /**
 	 * Método update()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
+	 * @return function
 	*/
     private function update($post) {
 
@@ -1344,7 +1350,7 @@ class AnimaisModel
                 data_nascimento = :data_nascimento,
                 registro_associacao  = :registro_associacao,
                 chip                 = :chip,
-                marca                = :marca,
+                marca                = upper(:marca),
                 grau_de_sangue       = :grau_de_sangue,
                 valor_mercado        = :valor_mercado,
                 informacoes_diversas = :informacoes_diversas,
@@ -1438,7 +1444,7 @@ class AnimaisModel
     /**
 	 * Método foto_base64_arq() - converte um base64 para arquivo de imagem, armazana o mesmo e atualiza o campo [foto_perfil_animal] com este arquivo
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
+	 * @return function
 	*/
     private function foto_base64_arq($id_animal, $foto_base64) {
 
@@ -1491,7 +1497,7 @@ class AnimaisModel
     /**
 	 * Método categorias()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
+	 * @return function
 	*/
     public function categorias() {
 
@@ -1535,7 +1541,7 @@ class AnimaisModel
     /**
 	 * Método localizacoes()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
+	 * @return function
 	*/
     // public function localizacoes($post) {
     public function localizacoes(ServerRequestInterface $request) {
@@ -1570,25 +1576,27 @@ class AnimaisModel
     /**
 	 * Método pais()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
+	 * @return function
 	*/
     public function pais(ServerRequestInterface $request) {
 
         $post = (object)$request->getParsedBody();
 
-  
         $connect = $this->conn->conectar();
+        if( !is_numeric($post->id_sexo) ) return erro('campo [SEXO] inválido! #0'); # Não Informado(1), Macho(2), Fêmea(3)
 
-        if( !in_array($post->id_sexo, [1, 2, 3]) ) return erro('campo [SEXO] inválido!'); # Não Informado(1), Macho(2), Fêmea(3)
+        if( !in_array($post->id_sexo, [0, 2, 3]) ) return erro('campo [SEXO] inválido!'); # Não Informado(1), Macho(2), Fêmea(3)
+
+        $SUBQUERY_SEXO = $post->id_sexo > 0 ? " AND id_sexo = '{$post->id_sexo}' " : " AND id_sexo IN (2, 3) ";
 
         $query =
 		"   SELECT 
-                id_animal, nome
+                id_animal, nome, id_sexo
             FROM tab_animais
             WHERE (
                 id_usuario_sistema = :id_proprietario
                 AND id_situacao_vida = '15' -- VIVOS
-                AND id_sexo = :id_sexo
+                {$SUBQUERY_SEXO}
                 AND id_situacao = '1'
             )
             ORDER BY nome ASC
@@ -1598,7 +1606,7 @@ class AnimaisModel
             return erro("Erro: {$connect->errno} - {$connect->error}", 500);
         }
         
-        $stmt->bindParam(':id_sexo', $post->id_sexo, PDO::PARAM_INT);
+        // $stmt->bindParam(':id_sexo', $post->id_sexo, PDO::PARAM_INT);
         $stmt->bindParam(':id_proprietario', $post->id_proprietario, PDO::PARAM_INT);
 
         if( !$stmt->execute() ) {
@@ -1609,12 +1617,228 @@ class AnimaisModel
         }
 
         $array_sexos = [
+            0 => 'MACHOS E FÊMEAS',
             1 => 'SEXO NÃO INFORMADO',
             2 => 'MACHOS',
             3 => 'FÊMEAS'
         ];
 
         return sucesso("{$stmt->rowCount()} RESULTADOS ENCONTRADOS! ({$array_sexos[$post->id_sexo]})", $stmt->fetchAll(PDO::FETCH_OBJ));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    /**
+	 * Método cadastra_genealogia()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+    public function cadastro_genealogia(ServerRequestInterface $request) {
+
+        $post = (object)$request->getParsedBody();
+
+        if ( !is_numeric($post->id_animal) || (int)$post->id_animal <= 0 ) {
+            msg_debug("CAMPO [ID_ANIMAL] INVÁLIDO!");
+            return erro("Animal não identificado!", 400, $post);
+        }
+
+        
+        $campos_genealogia = ['animal_11', 'animal_111', 'animal_112', 'animal_12', 'animal_121', 'animal_122', 'animal_21', 'animal_211', 'animal_212', 'animal_22', 'animal_221', 'animal_222'];
+        $post_validade = (array)$post;
+
+        // $post->animal_11 .= ' - ' . DATA_HORA_ATUAL;
+
+        $num_campos_preenchidos = 0;
+        foreach ($campos_genealogia as $campo_obrigatorio) {
+            if ( !isset($post_validade[$campo_obrigatorio]) ) {
+                return erro("Campo [{$campo_obrigatorio}] não informado!");
+            }
+
+            if ( !vazio($post_validade[$campo_obrigatorio]) ) {
+                $num_campos_preenchidos++;
+            }
+        }
+
+        if ($num_campos_preenchidos <= 0) return erro("Não é possível cadastrar uma Genealogia com todos os Campos Vazios!");
+
+        foreach ($campos_genealogia as $campo_obrigatorio) {
+            if ( isset($post->$campo_obrigatorio) && vazio($post->$campo_obrigatorio) ) {
+                $post->$campo_obrigatorio = '*****';
+            }
+            else {
+                $post->$campo_obrigatorio = trim($post->$campo_obrigatorio);
+            }
+        }
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        $connect = $this->conn->conectar();
+        $query =
+		"   SELECT 
+                tab_animais.id_animal, nome, id_usuario_sistema, id_genealogia
+            FROM tab_animais
+            LEFT JOIN tab_genealogias ON tab_genealogias.id_animal = tab_animais.id_animal
+            WHERE tab_animais.id_animal = :id_animal
+            GROUP BY tab_animais.id_animal
+		";
+        $stmt = $connect->prepare($query);
+        if(!$stmt) {
+            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+        }
+        $stmt->bindParam(':id_animal', $post->id_animal, PDO::PARAM_INT);
+        if( !$stmt->execute() ) {
+            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+        }
+        if ( $stmt->rowCount() <= 0 ) {   
+            msg_debug("ID DE ANIMAL {$post->id_animal} NÃO EXISTE NO BANCO!");
+            return erro("ANIMAL INFORMADO NÃO EXISTE NA BASE DE DADOS!", 404);
+        }
+        
+        $animal = $stmt->fetch(PDO::FETCH_OBJ);
+
+        if ( (int)$animal->id_usuario_sistema != (int)$post->id_proprietario ) {
+            msg_debug("ID DO ANIMAL '{$animal->nome}' PERTENCE AO PROPRIETÁRIO '{$animal->id_usuario_sistema}' E NÃO AO '$post->id_proprietario'!");
+            return erro("Animal informado não presente ao SEU PLANTEL!", 404, $animal);
+        }
+
+        $GENEALOGIA_EXISTENTE = (int)$animal->id_genealogia > 0;
+
+
+
+        # QUERYS DE INSERT/UPDATE
+        {
+            $query_update_genealogia =
+            "   UPDATE tab_genealogias SET
+                    animal_11  = upper(:animal_11),
+                    animal_111 = upper(:animal_111),
+                    animal_112 = upper(:animal_112),
+                    animal_12  = upper(:animal_12),
+                    animal_121 = upper(:animal_121),
+                    animal_122 = upper(:animal_122),
+
+                    animal_21  = upper(:animal_21),
+                    animal_211 = upper(:animal_211),
+                    animal_212 = upper(:animal_212),
+                    animal_22  = upper(:animal_22),
+                    animal_221 = upper(:animal_221),
+                    animal_222 = upper(:animal_222),
+
+                    DATA_ATUALIZACAO = CURDATE(),
+                    ID_USUARIO_ATUALIZACAO = :ID_USUARIO_ATUALIZACAO
+                WHERE (
+                    id_genealogia = :id_genealogia
+                    AND id_animal = :id_animal
+                )
+            ";
+            
+
+
+            $query_insert_genealogia =
+            "	INSERT INTO tab_genealogias (
+                    animal_11,
+                    animal_111,
+                    animal_112,
+                    animal_12,
+                    animal_121,
+                    animal_122,
+
+                    animal_21,
+                    animal_211,
+                    animal_212,
+                    animal_22,
+                    animal_221,
+                    animal_222,
+                    
+                    id_animal,
+
+                    DATA_CRIACAO,
+                    DATA_ATUALIZACAO,
+                    ID_USUARIO_CRIACAO,
+                    ID_USUARIO_ATUALIZACAO
+                ) 
+                VALUES (
+                    upper(:animal_11),
+                    upper(:animal_111),
+                    upper(:animal_112),
+                    upper(:animal_12),
+                    upper(:animal_121),
+                    upper(:animal_122),
+
+                    upper(:animal_21),
+                    upper(:animal_211),
+                    upper(:animal_212),
+                    upper(:animal_22),
+                    upper(:animal_221),
+                    upper(:animal_222),
+
+                    :id_animal,
+                    
+                    CURDATE(),
+                    CURDATE(),
+                    :ID_USUARIO_CRIACAO,
+                    :ID_USUARIO_ATUALIZACAO
+                )
+            ";
+
+        }
+
+        $connect->beginTransaction();
+
+        $stmt = $connect->prepare($GENEALOGIA_EXISTENTE ? $query_update_genealogia : $query_insert_genealogia);
+        if(!$stmt) {
+            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+        }
+
+        $stmt->bindParam(':animal_11', $post->animal_11);
+        $stmt->bindParam(':animal_111', $post->animal_111);
+        $stmt->bindParam(':animal_112', $post->animal_112);
+        $stmt->bindParam(':animal_12', $post->animal_12);
+        $stmt->bindParam(':animal_121', $post->animal_121);
+        $stmt->bindParam(':animal_122', $post->animal_122);
+
+        $stmt->bindParam(':animal_21', $post->animal_21);
+        $stmt->bindParam(':animal_211', $post->animal_211);
+        $stmt->bindParam(':animal_212', $post->animal_212);
+        $stmt->bindParam(':animal_22', $post->animal_22);
+        $stmt->bindParam(':animal_221', $post->animal_221);
+        $stmt->bindParam(':animal_222', $post->animal_222);
+
+        $stmt->bindParam(':id_animal', $post->id_animal, PDO::PARAM_INT);
+        $stmt->bindParam(':ID_USUARIO_ATUALIZACAO', $post->id_usuario, PDO::PARAM_INT);
+
+        if ( $GENEALOGIA_EXISTENTE ) {
+            $stmt->bindParam(':id_genealogia', $animal->id_genealogia, PDO::PARAM_INT);
+        }
+        else {
+            $stmt->bindParam(':ID_USUARIO_CRIACAO', $post->id_usuario, PDO::PARAM_INT);
+        }
+
+        if( !$stmt->execute() ) {
+            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+        }
+        $rowCount = $stmt->rowCount();
+        $connect->commit();
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if ( $rowCount <= 0 && !$GENEALOGIA_EXISTENTE ) {
+            msg_debug('NÃO CADASTRADA POR MOTIVOS DESCONHECIDOS -> VERIFIQUE!');
+            return erro('GENEALOGIA NÃO CADASTRADA!');
+        }
+        if ( $GENEALOGIA_EXISTENTE ) {
+            $sub_msg = $rowCount <= 0 ? ' - NENHUMA INFORMAÇÃO ALTERADA!' : '';
+            return sucesso("GENEALOGIA ATUALIZADA COM SUCESSO!{$sub_msg}", $post);
+        }
+        return sucesso("GENEALOGIA CADASTRADA COM SUCESSO!", $post);
     }
 
 } # AnimaisModel {}

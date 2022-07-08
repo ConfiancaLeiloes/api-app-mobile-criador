@@ -189,10 +189,8 @@ class FinanceiroModel
             ];
 
             array_push($dados_grupos, ["ID_GRUPO" => "0", "NOME_GRUPO" => "Todos"]);
-            array_push($dados, ["grupos" => $dados_grupos]);
             
-            
-            return sucesso("", ["dados"=>$dados, "resumo"=> $somatorio]);
+            return sucesso("", ["dados"=>$dados, "grupos" => $dados_grupos, "resumo"=> $somatorio]);
         } 
         catch (\Throwable $th) {
             throw new Exception($th->getMessage(), (int)$th->getCode());
