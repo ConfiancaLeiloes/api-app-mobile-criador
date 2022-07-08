@@ -57,26 +57,18 @@ $errorHandler = $errorMiddleware->getDefaultErrorHandler()->forceContentType('ap
 if (
     !uri_contem('/usuario/login')
     && !uri_contem('/usuario/cadastro')
+    && !uri_contem('/usuario/recuperar-senha')
     && !uri_contem('/usuario/recuperar_senha')
  ) {
 	UsuarioController::valida_token();
 }
 
+
 try {
-    # ROTAS DE ANIMAIS
-    require_once ('./modulos/animais/rotas.php');
-
-    # ROTAS DE FINANCEIRO
-    //require_once ('./modulos/financeiro/rotas.php');
-
-    # ROTAS DE NEGOCIOS
-    require_once ('./modulos/negocios/rotas.php');
-
-    # ROTAS DE MANEJOS
-    require_once ('./modulos/manejo/rotas.php');
-
+    require 'rotas.php';
     $app->run();
-} catch (\Throwable $th) {
+}
+catch (\Throwable $th) {
     @header("Status: 500 Rota não encontrada");
     @header("Content-type: application/json; charset=utf-8");
     exit(erro("Erro, rota não encontrada..", 500));
