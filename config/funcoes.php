@@ -94,6 +94,7 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   $retorno = [
     'codigo' => (boolean)$resultado,
     'message' => $mensagem,
+    'debug' => $_SESSION['debug'],
     
     'token_valido' => isset($_SESSION['token_valido']) ? $_SESSION['token_valido'] : true,
     'tem_permissao' => isset($_SESSION['tem_permissao']) ? $_SESSION['tem_permissao'] : true,
@@ -104,8 +105,8 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   ];
 
 
-  if ( isset($_SESSION['debug']) ) {
-    $retorno['debug'] = $_SESSION['debug'];
+  if ( !isset($_SESSION['debug']) ) {
+    unset($retorno['debug']);
   }
 
   $retorno['data'] = $dados;
