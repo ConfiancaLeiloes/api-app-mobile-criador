@@ -3,7 +3,7 @@
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class UsuarioController 
+class UsuarioController extends PessoaController
 {
 	private $usuario;
 	public function __construct()
@@ -91,11 +91,6 @@ class UsuarioController
 		// $post = (object)$_POST;
 		$post = body_params();
 
-		if ( modo_dev() ) {
-			print_r($objeto); exit;
-		}
-
-
 		$msg_erro = '';
 
 		if ( !isset($post->token) ) {
@@ -114,7 +109,7 @@ class UsuarioController
 			
 			$usuario = new UsuarioModel();
 			if ( !$usuario->token_valido($post) ) {
-				$msg_erro = 'Token inválido!';
+				$msg_erro = 'TOKEN INVÁLIDO!';
 			}
 
 		}
@@ -188,6 +183,7 @@ class UsuarioController
 	{
 		$post = (object)$request->getParsedBody();
 		$this->checa_permissao_acesso($post->id_usuario, 1);
+
 
 		$res = $this->usuario->perfil($request);
 		$response->getBody()->write($res);

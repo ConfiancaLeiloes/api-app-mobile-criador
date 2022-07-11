@@ -2488,68 +2488,6 @@ class AnimaisModel
         return sucesso("GENEALOGIA CADASTRADA COM SUCESSO!", $post);
     }
 
-     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    /**
-	 * Método proprietarios_criadores()
-	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return function
-	*/
-    public function proprietarios_criadores(ServerRequestInterface $request) {
-
-        $post = (object)$request->getParsedBody();
-
-        if ( strlen(trim($post->id_pessoa)) > 0 ) {
-            if ( !is_numeric(trim($post->id_pessoa)) || (int)trim($post->id_pessoa) < 0 ) return erro("Campo [id_pessoa] Inválido!");
-        }
-
-        $SUBQUERY_ID_PESSOA = (int)trim($post->id_pessoa) > 0 ? "AND tab_pessoas.id_pessoa = '{$post->id_pessoa}' " : '';
-
-        $SUBQUERY_PALAVRA_CHAVE = '';
-        if ( strlen(trim($post->palavra_chave)) > 2 ) {
-            $SUBQUERY_PALAVRA_CHAVE =
-            " AND (
-                    informacao_comercial_cliente LIKE '%{$post->palavra_chave}%'
-                    OR nome_propriedade_fazenda LIKE '%{$post->palavra_chave}%'
-                    OR informacoes_diversas LIKE '%{$post->palavra_chave}%'
-                    OR nome_razao_social LIKE '%{$post->palavra_chave}%' #
-                    OR email_usuario LIKE '%{$post->palavra_chave}%'
-                )
-            ";
-            
-        }
-
-        $connect = $this->conn->conectar();
-        $query =
-        "   SELECT
-                id_pessoa, 
-                upper(nome_razao_social) AS nome_razao_social
-            FROM tab_pessoas
-            WHERE (
-                id_usuario_sistema = :id_proprietario 
-                AND id_pessoa <> id_usuario_sistema
-                {$SUBQUERY_PALAVRA_CHAVE}
-                {$SUBQUERY_ID_PESSOA}
-            )
-        ";
-
-
-        $stmt = $connect->prepare($query);
-        if(!$stmt) {
-            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
-        }
-        $stmt->bindParam(':id_proprietario', $post->id_proprietario, PDO::PARAM_INT);
-        if( !$stmt->execute() ) {
-            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
-        }
-        if ( $stmt->rowCount() <= 0 ) {
-            return sucesso("Nenhum registro encontrado!", [], 404);
-        }
-
-
-
-        return sucesso("{$stmt->rowCount()} REGISTROS ENCONTRADOS...", $stmt->fetchAll(PDO::FETCH_OBJ));
-    }
-
 
 
 

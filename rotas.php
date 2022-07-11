@@ -1,6 +1,7 @@
 <?php
 
 $modulos =	[
+	'pessoas' => [PessoaController::class],
 	'usuario' => [UsuarioController::class],
   'manejo'  => [ManejoController::class],
   'animais' => [AnimaisController::class],
