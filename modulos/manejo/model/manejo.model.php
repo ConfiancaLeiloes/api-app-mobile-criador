@@ -69,14 +69,12 @@ class ManejoModel
                         tab_entradas_saidas_animais.id_usuario_sistema = :ID_PROPRIETARIO
                     ORDER BY tab_entradas_saidas_animais.data_movimento ASC";
 
-            $connect = $this->conn->conectar();
-
             $pdo = $this->conn->conectar();
             $res = $pdo->prepare($query_sql);
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->execute();  
             
-            if ($res->rowCount() <= 0 ) return erro("Nenhuma Movimentação foi localizada!");
+            if ($res->rowCount() <= 0 ) return erro("Nenhuma Movimentação foi localizada!", 200);
 
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
 
@@ -162,7 +160,7 @@ class ManejoModel
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->execute();  
             
-            if ($res->rowCount() <= 0 ) return erro("NENHUM RESULTADO ENCONTRADO!", 404);
+            if ($res->rowCount() <= 0 ) return erro("nenhum resultado encontrado!", 200);
 
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
 
@@ -226,7 +224,7 @@ class ManejoModel
             $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
             $res->execute();  
             
-            if ($res->rowCount() <= 0 ) return erro("Nenhum Lote foi localizado!");
+            if ($res->rowCount() <= 0 ) return erro("Nenhum Lote foi localizado!", 200);
 
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
 

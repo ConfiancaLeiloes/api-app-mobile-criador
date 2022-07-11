@@ -9,6 +9,17 @@ class AnimaisController
        $this->animais = new AnimaisModel();
     }
 
+    public function index(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+
+        var_dump($request->getQueryParams());
+
+        exit;
+        $resultado = $this->animais->index();
+        $response->getBody()->write($resultado);
+        return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
+       
+    }
     public function detalhes_animal_cobricoes(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         //$plantel = new PlantelModel();
@@ -96,18 +107,12 @@ class AnimaisController
         $response->getBody()->write($resultado);
         return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
     }
-    public function listar_socios_condominios(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
-    {
-        $resultado = $this->animais->listar_socios_condominios($request);
-        $response->getBody()->write($resultado);
-        return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
-    }
 
 
     /**
 	 * Método cadastro()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return object
+	 * @return function
 	*/
     public function cadastro(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
@@ -120,7 +125,7 @@ class AnimaisController
     /**
 	 * Método categorias()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return object
+	 * @return function
 	*/
     public function categorias(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
@@ -135,7 +140,7 @@ class AnimaisController
     /**
 	 * Método pais()
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return object
+	 * @return function
 	*/
     public function pais(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
@@ -143,6 +148,7 @@ class AnimaisController
         $response->getBody()->write($res);
         return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
     }
+
 
 
 
