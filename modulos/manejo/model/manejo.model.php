@@ -118,10 +118,13 @@ class ManejoModel
         try {
 
             $query_sql = 
-            "   SELECT  
+            "   SELECT 
                     tab_localizacoes.id_localizacao as ID_LOCAL, 
                     tab_localizacoes.descricao as NOME_LOCAL, 
-                    tab_localizacoes.lotacao_maxima as LOTACAO_MAXIMA_LOCAL,   
+                    tab_localizacoes.lotacao_maxima as LOTACAO_MAXIMA_LOCAL, 
+                    tab_animais.id_animal AS ID_ANIMAL,  
+                    tab_animais.nome AS NOME_ANIMAL,
+                    tab_animais.id_localizacao AS ID_LOCAL_ANIMAL,
                     (
                         COUNT(tab_animais.id_localizacao) - 
                         (
@@ -152,8 +155,48 @@ class ManejoModel
                     ) AND  
                     tab_localizacoes.id_usuario_sistema = :ID_PROPRIETARIO
                 )
-                GROUP BY tab_localizacoes.id_localizacao  
-                ORDER BY tab_localizacoes.descricao ASC
+                GROUP BY
+                 tab_localizacoes.id_localizacao
+                UNION 
+                SELECT  
+                    tab_localizacoes.id_localizacao as ID_LOCAL, 
+                    tab_localizacoes.descricao as NOME_LOCAL, 
+                    tab_localizacoes.lotacao_maxima as LOTACAO_MAXIMA_LOCAL, 
+                    tab_animais.id_animal AS ID_ANIMAL,  
+                    tab_animais.nome AS NOME_ANIMAL,
+                    tab_animais.id_localizacao AS ID_LOCAL_ANIMAL,
+                    (
+                        COUNT(tab_animais.id_localizacao) - 
+                        (
+                        SELECT  
+                        COUNT(tab_animais.id_animal)  
+                        FROM tab_animais  
+                            LEFT JOIN tab_compras_vendas_animais ON tab_compras_vendas_animais.id_produto_animal = tab_animais.id_animal  
+                        WHERE  
+                            tab_animais.id_localizacao = tab_localizacoes.id_localizacao  
+                            AND tab_compras_vendas_animais.id_situacao_recebimento_entrega = '39'  
+                            AND tab_compras_vendas_animais.id_tipo_produto = '1'
+                            AND tab_animais.id_situacao = '1' 
+                        )
+                    ) AS TOTAL_GERAL_ANIMAIS_LOCAL  
+                FROM tab_localizacoes  
+                JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_localizacoes.id_situacao  
+                LEFT JOIN tab_animais ON (
+                    tab_animais.id_localizacao = tab_localizacoes.id_localizacao  
+                    AND tab_animais.id_situacao_cadastro = '11' 
+                    AND tab_animais.id_situacao_vida = '15' 
+                    AND tab_animais.id_situacao = '1'
+                )
+                WHERE  (
+                    tab_localizacoes.id_situacao = '1' AND  
+                    ( 
+                        tab_localizacoes.descricao LIKE '%$palavra_chave%' OR  
+                        tab_localizacoes.informacao_adicional LIKE '%$palavra_chave%' 
+                    ) AND  
+                    tab_localizacoes.id_usuario_sistema = :ID_PROPRIETARIO
+                )
+                GROUP BY
+                 tab_animais.id_animal 
             ";
 
 
@@ -167,17 +210,46 @@ class ManejoModel
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
 
             $totalizador = 0;
+            // Tratar dados por lotes
+            foreach ($dados as $value) {
+                $dados_convertidos[] = $value["ID_LOCAL"];
+            }
+            $dados_convertidos = array_unique($dados_convertidos, SORT_REGULAR); //Elimina os locaiss repetidos
             foreach ($dados as $key => $value) {
-                // Faz o Somatório dos Animais por Locais
-                $totalizador = $totalizador + $value['TOTAL_GERAL_ANIMAIS_LOCAL'];
-                
-                $dados[$key]['CONTADOR'] =  $key+1;
+                foreach ($dados_convertidos as $key1 => $id_local) {
+                    
+                    if ($id_local == $value["ID_LOCAL_ANIMAL"] AND $value["TOTAL_GERAL_ANIMAIS_LOCAL"] >= 0) { // Guarda os animais em seu local específico
+                        $animal[$key1][] = [
+                            "ID_ANIMAL"     => $value["ID_ANIMAL"],
+                            "NOME_ANIMAL"   => $value["NOME_ANIMAL"]
+                        ];
+                    }
+
+                    if ($id_local == $value["ID_LOCAL_ANIMAL"]) {
+                            
+                        $dados_finais[$key1] = [
+                            "ID_LOCAL"            => $value["ID_LOCAL"],
+                            "NOME_LOCAL"          => $value["NOME_LOCAL"],
+                            "TOTAL_ANIMAL_LOCAIS" => 0,
+                            "ANIMAIS" => $animal[$key1]
+                        ];
+                    }
+                }
+            }
+
+            foreach ($dados_finais as $key => $value) { //Elimina animais repetidos e aplica a contagem total para cada local
+                $dados_finais[$key]["ANIMAIS"] = array_values(array_unique($dados_finais[$key]["ANIMAIS"], SORT_REGULAR));
+                $dados_finais[$key]["TOTAL_ANIMAL_LOCAIS"] = count($dados_finais[$key]["ANIMAIS"]);
+            }
+            $dados = array_values($dados_finais);
+
+            //Somar total de animais em todos os lotes
+            foreach ($dados as $value) {
+                $totalizador += $value["TOTAL_ANIMAL_LOCAIS"];
             }
             $somatorio = [
                 "TOTAL_ANIMAIS_LOCAIS" => $totalizador             
             ];
-
-
 
             return sucesso("{$res->rowCount()} REGISTROS ENCONTRADOS!", ["dados"=>$dados, "resumo"=> $somatorio]);
         } 
@@ -206,10 +278,13 @@ class ManejoModel
                         "SELECT  
                         tab_lotes.id_lote as ID_LOTE, 
                         tab_lotes.descricao as NOME_LOTE,  
-                        COUNT(tab_animais_nos_lotes.id_animal) AS TOTAL_ANIMAIS_LOTE  
+                        tab_animais.id_animal AS ID_ANIMAL,
+                        tab_animais.nome AS NOME_ANIMAL,
+                        tab_animais_nos_lotes.id_lote AS ID_LOTE_ANIMAL  
                     FROM tab_lotes  
                     JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_lotes.id_situacao  
-                    LEFT JOIN tab_animais_nos_lotes ON tab_animais_nos_lotes.id_lote = tab_lotes.id_lote  
+                    LEFT JOIN tab_animais_nos_lotes ON tab_animais_nos_lotes.id_lote = tab_lotes.id_lote
+                    JOIN tab_animais ON tab_animais.id_animal = tab_animais_nos_lotes.id_animal  
                     WHERE  
                     tab_lotes.id_situacao = '1' AND
                         (
@@ -217,7 +292,7 @@ class ManejoModel
                             tab_lotes.info_adicional LIKE '%$palavra_chave%' 
                         ) AND  
                         tab_lotes.id_usuario_sistema = :ID_PROPRIETARIO 
-                    GROUP BY tab_lotes.id_lote  
+                    GROUP BY tab_animais_nos_lotes.id_no_lote 
                     ORDER BY tab_lotes.descricao ASC";
 
 
@@ -231,11 +306,42 @@ class ManejoModel
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
 
             $totalizador = 0;
+
+            // Tratar dados por lotes
+            foreach ($dados as $value) {
+                $dados_convertidos[] = $value["ID_LOTE"];
+            }
+            $dados_convertidos = array_unique($dados_convertidos, SORT_REGULAR); //Elimina os lotes repetidos
+            
             foreach ($dados as $key => $value) {
-                // Faz o Somatório dos Animais por Locais
-                $totalizador = $totalizador + $value['TOTAL_ANIMAIS_LOTE'];
-                
-                $dados[$key]['CONTADOR'] =  $key+1;
+                foreach ($dados_convertidos as $key1 => $id_lote) {
+                    
+                    if ($id_lote == $value["ID_LOTE_ANIMAL"]) { // Guarda os animais que pertecem aquele lote específico
+                        
+                        $animal[$key1][] = [
+                            "ID_ANIMAL"     => $value["ID_ANIMAL"],
+                            "NOME_ANIMAL"   => $value["NOME_ANIMAL"]
+                        ];
+                    }
+                    
+                    if ($id_lote == $value["ID_LOTE"]) {
+                            
+                        $dados_finais[$key1] = [
+                            "ID_LOTE"            => $value["ID_LOTE"],
+                            "NOME_LOTE"          => $value["NOME_LOTE"],
+                            "TOTAL_ANIMAL_LOTES" => count($animal[$key1]),
+                            "ANIMAIS" => 
+                                array_values($animal[$key1])
+                        ];
+                    }
+                }
+            }
+            
+            $dados = array_values($dados_finais);
+            
+            //Somar total de animais em todos os lotes
+            foreach ($dados as $value) {
+                $totalizador += $value["TOTAL_ANIMAL_LOTES"];
             }
             $somatorio = [
                 "TOTAL_ANIMAIS_LOTE" => $totalizador             

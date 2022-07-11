@@ -753,13 +753,11 @@ class AnimaisModel
                                 tab_animais.registro_associacao AS REGISTRO_ANIMAL,
                                 CONCAT(
                                   tab_pessoas.nome_razao_social,
-                                  '
-                                    Permanência: ',
+                                  '\nPermanência: ',
                                   DATE_FORMAT(tab_socios.permanencia_socio_01, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_01 = '3',
-                                    '
-                                    Sócio Administrador',
+                                    '\nSócio Administrador',
                                     ''
                                   )
                                 ) AS NOME_SOCIO,
@@ -828,13 +826,11 @@ class AnimaisModel
                                 tab_animais.registro_associacao AS REGISTRO_ANIMAL,
                                 CONCAT(
                                   tab_pessoas.nome_razao_social,
-                                  '
-                                    Permanência: ',
+                                  '\nPermanência: ',
                                   DATE_FORMAT(tab_socios.permanencia_socio_01, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_02 = '3',
-                                    '
-                                    Sócio Administrador',
+                                    '\nSócio Administrador',
                                     ''
                                   )
                                 ) AS NOME_SOCIO,
@@ -903,13 +899,11 @@ class AnimaisModel
                                 tab_animais.registro_associacao AS REGISTRO_ANIMAL,
                                 CONCAT(
                                   tab_pessoas.nome_razao_social,
-                                  '
-                                    Permanência: ',
+                                  '\nPermanência: ',
                                   DATE_FORMAT(tab_socios.permanencia_socio_01, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_03 = '3',
-                                    '
-                                    Sócio Administrador',
+                                    '\nSócio Administrador',
                                     ''
                                   )
                                 ) AS NOME_SOCIO,
@@ -978,13 +972,11 @@ class AnimaisModel
                                 tab_animais.registro_associacao AS REGISTRO_ANIMAL,
                                 CONCAT(
                                   tab_pessoas.nome_razao_social,
-                                  '
-                                    Permanência: ',
+                                  '\nPermanência: ',
                                   DATE_FORMAT(tab_socios.permanencia_socio_01, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_04 = '3',
-                                    '
-                                    Sócio Administrador',
+                                    '\nSócio Administrador',
                                     ''
                                   )
                                 ) AS NOME_SOCIO,
@@ -1053,13 +1045,11 @@ class AnimaisModel
                                 tab_animais.registro_associacao AS REGISTRO_ANIMAL,
                                 CONCAT(
                                   tab_pessoas.nome_razao_social,
-                                  '
-                                    Permanência: ',
+                                  '\nPermanência: ',
                                   DATE_FORMAT(tab_socios.permanencia_socio_01, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_05 = '3',
-                                    '
-                                    Sócio Administrador',
+                                    '\nSócio Administrador',
                                     ''
                                   )
                                 ) AS NOME_SOCIO,
@@ -1128,13 +1118,11 @@ class AnimaisModel
                                 tab_animais.registro_associacao AS REGISTRO_ANIMAL,
                                 CONCAT(
                                   tab_pessoas.nome_razao_social,
-                                  '
-                                    Permanência: ',
+                                  '\nPermanência: ',
                                   DATE_FORMAT(tab_socios.permanencia_socio_06, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_01 = '3',
-                                    '
-                                    Sócio Administrador',
+                                    '\nSócio Administrador',
                                     ''
                                   )
                                 ) AS NOME_SOCIO,
@@ -1203,13 +1191,11 @@ class AnimaisModel
                                 tab_animais.registro_associacao AS REGISTRO_ANIMAL,
                                 CONCAT(
                                   tab_pessoas.nome_razao_social,
-                                  '
-                                    Permanência: ',
+                                  '\nPermanência: ',
                                   DATE_FORMAT(tab_socios.permanencia_socio_01, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_07 = '3',
-                                    '
-                                    Sócio Administrador',
+                                    '\nSócio Administrador',
                                     ''
                                   )
                                 ) AS NOME_SOCIO,
@@ -1278,8 +1264,7 @@ class AnimaisModel
                                 tab_animais.registro_associacao AS REGISTRO_ANIMAL,
                                 CONCAT(
                                   tab_pessoas.nome_razao_social,
-                                  '
-                                    Permanência: ',
+                                  '\nPermanência: ',
                                   DATE_FORMAT(tab_socios.permanencia_socio_01, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_08 = '3',
