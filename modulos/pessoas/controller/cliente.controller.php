@@ -13,16 +13,30 @@ class ClienteController extends PessoaController
 	}
 
 
+
 	/**
-	 * Método
+	 * Método cadastro
 	 * @author Antonio Ferreira <@toniferreirasantos>
-	 * @return 
-	*/
-	public function teste2(ServerRequestInterface $request, ResponseInterface $response) {
-		$res = $this->cliente->teste2($request);
+	 * @return function
+	*/	
+	public function perfil(ServerRequestInterface $request, ResponseInterface $response) {
+		$res = $this->cliente->perfil($request);
 		$response->getBody()->write($res);
-		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');	 
+		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
 	}
+
+
+	/**
+	 * Método cadastro
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/	
+	public function cadastro(ServerRequestInterface $request, ResponseInterface $response) {
+		$res = $this->cliente->cadastro($request);
+		$response->getBody()->write($res);
+		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
+	}
+
 
 
 }

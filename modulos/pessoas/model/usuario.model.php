@@ -290,7 +290,7 @@ class UsuarioModel extends PessoaModel
 			}
 		}
 
-		if ( strlen($post->telefone_fixo) > 0 && strlen($post->telefone_fixo) < 8) {
+		if ( strlen($post->telefone_fixo) > 0 && strlen($post->telefone_fixo) < 10) {
 			return erro('Campo [TELEFONE] inválido!');
 		}
 

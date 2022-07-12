@@ -16,6 +16,18 @@ function valida_email($mail) {
 }
 
 
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
+function email_valido($mail) {
+  return valida_email($mail);
+}
+
+
+
+
 
 
 /**
@@ -71,9 +83,9 @@ function data_valida($data) {
   }
 
 	$data = explode('-', $data); // fatia a string $dat em pedados, usando / como referência
-	$y = $data[0];
-	$m = $data[1];
-	$d = $data[2];
+	$y = (int)$data[0];
+	$m = (int)$data[1];
+	$d = (int)$data[2];
  
 	$res = checkdate($m, $d, $y); // VERIFICA SE A DATA É VÁLIDA!
 

@@ -89,8 +89,6 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   //   }
   // }
 
-  
-
   $retorno = [
     'codigo' => (boolean)$resultado,
     'message' => $mensagem,
@@ -100,13 +98,16 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
     'tem_permissao' => isset($_SESSION['tem_permissao']) ? $_SESSION['tem_permissao'] : true,
     
     'http_status_code' => $http_status_code,
-    'modo_dev' => modo_dev(),
     'data_hora_requisicao' => DATA_HORA_ATUAL
   ];
 
 
   if ( !isset($_SESSION['debug']) ) {
     unset($retorno['debug']);
+  }
+  
+  if ( modo_dev() ) {
+    $retorno['modo_dev'] = true;
   }
 
   $retorno['data'] = $dados;

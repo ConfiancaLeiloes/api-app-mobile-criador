@@ -26,12 +26,4 @@ class PessoaController
 	}
 
 
-	public function teste()
-	{
-		exit("teste");
-	}
-
-
-
-
 }
