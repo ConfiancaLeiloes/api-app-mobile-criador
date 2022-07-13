@@ -17,6 +17,7 @@ date_default_timezone_set('America/Sao_Paulo');
 
 require_once 'loads.php';
 
+
 $app = AppFactory::create();
 $app->add(function (Request $request, RequestHandlerInterface $handler): Response {
     $routeContext = RouteContext::fromRequest($request);
@@ -53,6 +54,8 @@ $app->setBasePath((function () {
 // Get the default error handler and register my custom error renderer.
 $errorHandler = $errorMiddleware->getDefaultErrorHandler()->forceContentType('application/json');
 
+
+include 'logs/requests.php';
 
 if (
     !uri_contem('/usuario/login')

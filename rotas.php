@@ -17,7 +17,7 @@ $modulos =	[
 $nome_rota = last_level_uri();
 $nome_metodo = str_replace('-', '_', $nome_rota);
 
-# $app->get('/modulo/medodo', ClienteController::class . ':metodo');
+# $app->get('/modulo/metodo', ClassController::class . ':metodo');
 try {
 	
 	foreach ($modulos as $nome_modulo => $classe) {

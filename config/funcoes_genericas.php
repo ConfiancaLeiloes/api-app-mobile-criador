@@ -257,6 +257,16 @@ function cpf_cnpj_valido($cpf_cnpj) {
 } 
 
 
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
+function contem_substring($substring, $string) {
+  return strpos($string, $substring) === false ? false : true;
+}
+
+
 //Retorna um intervalo de Datas para ser utilizado em um BETWEEN SQL de acordo com a Estação de Monta Selecionada
 function intevalo_datas_estacoes_monta($id_estacao)
 {

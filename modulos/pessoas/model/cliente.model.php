@@ -306,7 +306,6 @@ class ClienteModel extends PessoaModel
 			"	SELECT * FROM tab_pessoas
 				WHERE (
 					lower(email_usuario) = :email_usuario
-					AND id_pessoa = id_usuario_sistema
 					AND id_pessoa <> :id_usuario
 				)
 			";
