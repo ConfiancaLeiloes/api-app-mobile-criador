@@ -169,7 +169,6 @@ class UsuarioController
 			@header("Content-type: application/json; charset=utf-8");			
 			exit(erro($msg_erro));
 		}
-
 	}
 
 

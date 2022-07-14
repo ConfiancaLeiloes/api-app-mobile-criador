@@ -230,6 +230,7 @@ class ManejoModel
                         $dados_finais[$key1] = [
                             "ID_LOCAL"            => $value["ID_LOCAL"],
                             "NOME_LOCAL"          => $value["NOME_LOCAL"],
+                            "LOTACAO_MAXIMA_LOCAL"      => $value["LOTACAO_MAXIMA_LOCAL"],  
                             "TOTAL_ANIMAL_LOCAIS" => 0,
                             "ANIMAIS" => $animal[$key1]
                         ];

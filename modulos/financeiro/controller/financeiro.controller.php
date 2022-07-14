@@ -29,5 +29,12 @@ class FinanceiroController
         return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
        
     }
+    public function listar_saldo_cliente(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $resultado = $this->financeiro->listar_saldo_cliente($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
+       
+    }
 }
   

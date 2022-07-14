@@ -35,7 +35,8 @@ class AnimaisModel
                             WHEN tab_toques.id_situacao_prenhez = '20' THEN '3' -- Negativo
                         END
                     ) as ID_TIPO_TOQUE_COBRICAO, 
-                    (CASE WHEN tab_toques.id_situacao_prenhez IS NULL THEN 'SEM TOQUE' ELSE CONCAT(UPPER(tab_situacao_toque.descricao),' ',DATE_FORMAT(tab_toques.data_toque,'%d/%m/%Y')) END) as TOQUE_COBRICAO, 
+                    (CASE WHEN tab_toques.id_situacao_prenhez IS NULL THEN 'SEM TOQUE' ELSE UPPER(tab_situacao_toque.descricao) END) as TOQUE_COBRICAO, 
+                    (CASE WHEN tab_toques.id_situacao_prenhez IS NULL THEN '00/00/0000' ELSE DATE_FORMAT(tab_toques.data_toque,'%d/%m/%Y') END) as DATA_TOQUE_COBRICAO, 
                     IF((tab_toques.id_situacao_prenhez = '19' AND ISNULL(tab_nascimentos.id_nascimento)),CONCAT(DATEDIFF(CURDATE(), tab_cobricoes.data_cobertura), ' Dia(s)'),CONCAT('Nasceu: ',UPPER(tab_nascimentos.nome),' ',IF(tab_nascimentos.id_sexo = '2','(M)','(F)'))) as DIAS_GESTACAO_COBRICAO,
                     tab_central.nome_razao_social as NOME_CENTRAL_COBRICAO, 
                     UPPER(tab_tipos_cobricoes.descricao) as TIPO_COBRICAO, 
@@ -414,6 +415,8 @@ class AnimaisModel
                         UPPER(tab_situacao_animal.descricao) as SITUACAO_ANIMAL, 
                         IF(tab_animais.id_sexo = '2', UPPER(tab_situacao_castrado.descricao), '-') as SITUACAO_MACHO_CASTRADO_ANIMAL, 
                         UPPER(tab_situacao_vida.descricao) as SITUACAO_VIDA_ANIMAL, 
+                        UPPER(tab_animais.causa_morte) as CAUSA_MORTE, 
+                        UPPER(tab_animais.data_morte) as DATA_MORTE, 
                         IF(ISNULL(tab_animais.informacoes_diversas) OR TRIM(tab_animais.informacoes_diversas) = '','SEM INFORMAÇÕES ADICIONAIS',tab_animais.informacoes_diversas) as INFORMACOES_DIVERSAS_ANIMAL,  
                         CONCAT('$url_fotos',tab_animais.foto_perfil_animal) as FOTO_ANIMAL,
                         (
