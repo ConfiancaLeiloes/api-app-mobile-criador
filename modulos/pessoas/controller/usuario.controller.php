@@ -52,24 +52,7 @@ class UsuarioController extends PessoaController
 	 * @return 
 	*/
 	public function recuperar_senha(ServerRequestInterface $request, ResponseInterface $response) {
-	// public function recuperar_senha() {
-
-		// $body = (object)$request->getParsedBody();	
-		$body = (object)$_GET;
-		
-		if ( !isset($body->email) ) {
-			return json("Campo [E-MAIL] não informado!", $response);
-		}
-
-		if ( vazio($body->email) ) {
-			return json("Informe o [E-MAIL]!", $response);
-		}
-
-		if ( !valida_email($body->email) ) {
-			return json("[E-MAIL] INVÁLIDO!", $response);
-		}
-
-		$res = $this->usuario->recuperar_senha($body);
+		$res = $this->usuario->recuperar_senha( (object)$_GET );
 		$response->getBody()->write($res);
 		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');	 
 	}

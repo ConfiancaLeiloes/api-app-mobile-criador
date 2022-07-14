@@ -210,16 +210,30 @@ function json($msg = '', $response, $http_status_code = 400) {
 }
 
 
-
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
 function cripto($string) {
   return base64_encode(base64_encode(base64_encode($string)));
 }
+
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
 function descripto($string) {
   return base64_decode(base64_decode(base64_decode($string)));
 }
 
 
-
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
 function valida_token($id_modulo = 0) {
   
   @header("Content-type: application/json; charset=utf-8");
@@ -275,8 +289,12 @@ function valida_token($id_modulo = 0) {
 
 
 
-
-function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remetente = 'contato@confiancaleiloes.digital') {
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
+function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remetente = '') {
   
 	# APLICANDO TRIM NOS PARÂMETROS
 	$assunto 			      = trim($assunto);
@@ -284,7 +302,7 @@ function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remeten
 	$email_remetente    = trim($email_remetente);
 	$email_destinatário = trim($email_destinatário);
 
-  $email_remetente = !vazio($email_remetente) ? $email_remetente : EMAIL_CONFIANCA;
+  $email_remetente = !vazio($email_remetente) ? $email_remetente : EMAIL_COMERCIAL;
 
 	# VERIFICA SE ALGUM PARAMETRO VEIO VAZIO;
 	if ( 
@@ -316,6 +334,32 @@ function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remeten
     </body>
   </html>
   ";
+
+
+  $corpo_email =
+  " <html>
+      <body style='width: 800px; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-weight: normal;  color: #545454'>
+              
+        <div style='margin-top: 30px;'>
+          <img src='https://confiancacriador.digital/assets/img/logo.png' height='80' />
+        </div>
+
+        {$MENSAGEM}
+
+        <div style='width:100%;margin-top: 30px;'>
+          <p>Nossa equipe está à sua inteira disposição caso necessite de ajuda!</p>
+          <h4 style='margin-bottom: 0 !important;'>Suporte:</h4>
+          <p style='margin-top: 0 !important; margin-bottom: 0 !important;'>
+            WhatsApp: <b>(31) 2118-1776 </b>– E-mail: <b>suporte@confiancacriador.digital</b>
+          </p>
+          <p style='margin-top: 0 !important;'>
+            Site: <a href='https://confiancacriador.digital' target='_blank'></a>www.confiancacriador.digital
+          </p>
+        </div>
+
+      </body>
+    </html>
+  ";
   
   #  TurboSMTP
   require PATH_CDN  . '/php/services/TurboSMTP/TurboApiClient.php'; 
@@ -323,7 +367,7 @@ function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remeten
   $email = new Email();
   $email->setFrom($email_remetente); # E-mail de Origem
 
-  $email->setToList($email_destinatário); # E-MAIL DO REMETENTE
+  $email->setToList(modo_dev() ? EMAIL_DEV : $email_destinatário); # E-MAIL DO REMETENTE
   $email->setSubject($assunto); # Assunto do E-mail
   $email->setHtmlContent($corpo_email); // Conteúdo em HTML
 

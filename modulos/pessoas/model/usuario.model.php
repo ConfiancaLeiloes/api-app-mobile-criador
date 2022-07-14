@@ -5,7 +5,27 @@ use Psr\Http\Message\ServerRequestInterface;
 class UsuarioModel extends PessoaModel
 {
 
+	
 
+	/**
+	 * Método plano_gratis()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return object
+	*/
+	private function plano_gratis()
+	{
+
+		$num_dias_plano_gratis = 5;
+		$data_final_plano_gratis = date('Y-m-d', strtotime("+{$num_dias_plano_gratis} days", strtotime(DATA_ATUAL)));
+		$data_final_plano_gratis_format = date('d/m/Y', strtotime($data_final_plano_gratis));
+
+		return (object)[
+			'num_dias_plano_gratis' 				 => $num_dias_plano_gratis,
+			'data_final_plano_gratis' 			 => $data_final_plano_gratis,
+			'data_final_plano_gratis_format' => $data_final_plano_gratis_format
+		];
+
+	}
 
 
 	/**
@@ -350,6 +370,36 @@ class UsuarioModel extends PessoaModel
 		if ( (int)$post->id_estado <= 0 ) {
 			return erro("Campo [ESTADO / UF] não informado!");
 		}
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		$connect = $this->conn->conectar();
+		$query =
+		"	SELECT 
+			(
+				SELECT nome_cidade FROM tab_cidades WHERE id_cidade = '{$post->id_cidade}'
+			) AS nome_cidade,
+			(
+				SELECT sigla_estado FROM tab_estados WHERE id_estado = '{$post->id_estado}'
+			) AS sigla_estado
+		";
+		$stmt = $connect->prepare($query);
+		if(!$stmt) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+		if( !$stmt->execute() ) {
+			return erro('error', 'Erro: SQLSTATE: '. $stmt->errorInfo()[modo_dev() ? 2 : 1]);
+		}
+		$local = $stmt->fetch(PDO::FETCH_OBJ);
+
+		if ( vazio($local->nome_cidade) ) {
+			return erro("Campo [ESTADO / UF] não identificado!");
+		}
+		if ( vazio($local->nome_cidade) ) {
+			return erro("Campo [CIDADE] não identificado!");
+		}
+
+		$post->nome_cidade = $local->nome_cidade;
+		$post->sigla_estado = $local->sigla_estado;
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		
 		foreach ($post as $nome_campo => $valor) {
@@ -385,6 +435,7 @@ class UsuarioModel extends PessoaModel
 	private function insert($usuario) {
 
 		$connect = $this->conn->conectar();
+		$plano_gratis = $this->plano_gratis();
 
 		# VERIFICANDO DADOS REPETIDOS NO BANCO
 		$query =
@@ -475,7 +526,8 @@ class UsuarioModel extends PessoaModel
 				upper(:complemento),
 
 				-- [data_limite_licenca] -> 5 DIAS A PARTIR DA DATA DO CADASTRO',
-				DATE_ADD(curdate(), INTERVAL 5 DAY),
+				-- DATE_ADD(curdate(), INTERVAL 5 DAY),
+				:data_limite_licenca,
 
 				-- [informacoes_diversas]
 				'Usuário cadastrado via API do App Mobile',
@@ -512,6 +564,10 @@ class UsuarioModel extends PessoaModel
 		$stmt->bindParam(':bairro', $usuario->bairro);
 		$stmt->bindParam(':logradouro', $usuario->logradouro);
 		$stmt->bindParam(':complemento', $usuario->complemento);
+
+		$stmt->bindParam(':data_limite_licenca', $plano_gratis->data_final_plano_gratis);
+
+
 
 		if( !$stmt->execute() ) {
 			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 2 : 1 ], 500);
@@ -606,7 +662,7 @@ class UsuarioModel extends PessoaModel
 			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
 		}
 		if( !$stmt->execute() ) {
-			retorno_usuario('error', 'Erro: SQLSTATE: '. $stmt->errorInfo()[1]); // http://us3.php.net/pdo.errorInfo	
+			return erro('error', 'Erro: SQLSTATE: '. $stmt->errorInfo()[1]); // http://us3.php.net/pdo.errorInfo	
 		}
 		$modulos = $stmt->fetch(PDO::FETCH_OBJ);
   
@@ -642,37 +698,25 @@ class UsuarioModel extends PessoaModel
 			}
 		
 		} # foreach
-		
+
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		# E-MAIL(S)
-		$mensagem = "
-			<b>UM NOVO CADASTRO FOI REALIZADO PELO APLICATIVO</b>:
-			<br> Nome: {$usuario->nome_razao_social}
-			<br> Documento: {$usuario->CPF_CNPJ}
-			<br> E-mail: {$usuario->email_usuario}
-			<br> Celular: {$usuario->telefone_celular}
-		";
-		
-		!@dispara_email($mensagem, 'NOVO CADASTRO', EMAIL_DEV);
-		// !@dispara_email($mensagem, 'NOVO CADASTRO', EMAIL_CONFIANCA);
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		// echo $this->msg_confirmacao_cadastro($usuario, 2); exit;
+
+		@dispara_email($this->msg_confirmacao_cadastro($usuario, 2), 'NOVO CADASTRO - APLICATIVO!', EMAIL_DIRETORIA);	
+
+		// sleep(2);
+		@dispara_email($this->msg_confirmacao_cadastro($usuario, 1), 'CONFIRMAÇÃO DE CADASTRO!', $usuario->email_usuario);
 		
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		$connect->commit();
+		if ( !modo_dev() ) {
+			$connect->commit();
+		}
 		return sucesso("CADASTRO REALIZADO COM SUCESSO!" . (modo_dev() ? " - [$id_user_adicionado]" : ''), [$usuario], 201);
 	}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -815,6 +859,20 @@ class UsuarioModel extends PessoaModel
 	 * @return 
 	*/
 	public function recuperar_senha($get) {
+		
+		if ( !isset($get->email) ) {
+			return erro("Campo [E-MAIL] não informado!");
+		}
+
+		if ( vazio($get->email) ) {
+			return erro("Informe o [E-MAIL]!");
+		}
+
+		if ( !valida_email($get->email) ) {
+			return erro("[E-MAIL] INVÁLIDO!");
+		}
+
+
 
 		$connect = $this->conn->conectar();
 
@@ -860,7 +918,7 @@ class UsuarioModel extends PessoaModel
 		$query_update =
 		"	UPDATE tab_pessoas SET
 				token_login_app = null,
-				senha_usuario = :nova_senha
+				senha_usuario = :nova_senha 
 			WHERE (
 				id_pessoa = :id_usuario AND
 				email_usuario = :email
@@ -886,7 +944,9 @@ class UsuarioModel extends PessoaModel
 		}
 
 		# DISPARANDO O E-MAIL
-		$MENSAGEM = 'MENSAGEM TESTE DE ENVIO DE E-MAIL';
+		$MENSAGEM = '<br>SEGUE ABAIXO SUA NOVA SENHA DE ACESSO!';
+		$MENSAGEM .= "<br>NOVA SENHA: <b>{$NOVA_SENHA}</b>";
+
 		if ( !@dispara_email($MENSAGEM, 'RECUPERAÇÃO DE SENHA', $get->email) ) {
 			return erro("Erro ao disparar e-mail");
 		}
@@ -894,6 +954,119 @@ class UsuarioModel extends PessoaModel
 		return sucesso("Uma nova senha foi gerada e enviada ao seu e-mail!");
 		
 	} # recuperar_senha()
+
+
+
+
+
+
+
+
+
+	/**
+	 * Método msg_confirmacao_cadastro()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return String
+	*/
+	private function msg_confirmacao_cadastro($usuario, $tipo = 1) {
+
+		$DATA_HORA_ATUAL = date('d/m/Y - H:i', strtotime(DATA_HORA_ATUAL));
+
+		$plano_gratis = $this->plano_gratis();
+		$num_dias_plano_gratis = $plano_gratis->num_dias_plano_gratis;
+		$data_final_plano_gratis_format = $plano_gratis->data_final_plano_gratis_format;
+
+		$usuario->nome_razao_social = mb_strtoupper($usuario->nome_razao_social, 'UTF-8');
+		$usuario->nome_propriedade_fazenda = mb_strtoupper($usuario->nome_propriedade_fazenda, 'UTF-8');
+		$usuario->numero_animais_plantel = (int)$usuario->numero_animais_plantel;
+
+		$mensagem1 =
+		" <div style='margin-top: 30px;'>
+				<h1 style='color: #EC6608; margin-bottom: 0'> Olá, {$usuario->nome_razao_social}! </h1>
+				<h3 style='margin-top: 0;'>Seja muito bem-vindo ao Confiança Criador, <br> a plataforma mais completa para a gestão de seu haras.</h3>
+				<p class='margin-top: 30px;'>Você se cadastrou em nosso aplicativo e forneceu as seguintes informações:</p>
+			</div>
+	
+			<div style='width:100%; margin-top: 30px;'>
+				<h4> 1 - Plano escolhido:</h4>
+				<p style='margin: 3px;'>Plano:    	 <b style='color: #EC6608'>GRÁTIS - PERÍODO DE TESTES</b></p>
+				<p style='margin: 3px;'>Período:  	 <b>{$num_dias_plano_gratis} dias</b> (Até {$data_final_plano_gratis_format})</p>
+				<p style='margin: 3px;'>Contratação: <b>{$DATA_HORA_ATUAL}</b></p>
+			</div>
+	
+			<div style='width:100%; margin-top: 30px;'>
+				<h4>2 - Dados cadastrais:</h4>
+				<p style='margin: 3px;'>Nome:          <b style='color: #EC6608'>{$usuario->nome_razao_social}</b></p>
+				<p style='margin: 3px;'>Fazenda/Haras: <b>{$usuario->nome_propriedade_fazenda}</b></p>
+				<p style='margin: 3px;'>Plantel:       <b>{$usuario->numero_animais_plantel} Animais</b></p>
+				<p style='margin: 3px;'>Cidade / UF:   <b>{$usuario->nome_cidade}/{$usuario->sigla_estado}</b></p>
+				<p style='margin: 3px;'>Celular:       <b>{$usuario->telefone_celular}</b></p>
+			</div>
+
+			<div style='width:100%; margin-top: 30px;'>
+				<h4> 3 - Dados de Acesso ao Sistema e Aplicativo:</h4>
+				<p style='margin: 3px'>E-mail: <b style='color: #EC6608'>{$usuario->email_usuario}</b></p>
+				<p style='margin: 3px'>Senha:  <b style='color: #EC6608'>{$usuario->senha_usuario}</b></p>
+			</div>
+
+			<div style='width:100%; margin-top: 30px;'>
+				<h4>4 – Download do Confiança Criador Office:</h4>
+				<a href='https://confiancacriador.digital/download/Setup_Confianca_Criador.exe' target='_blank'>
+					<img src='https://confiancacriador.digital/assets/img/email/download.svg' />
+				</a>
+	
+				<h4>5 – Download do Aplicativo Confiança Criador nas lojas:</h4>
+				<a href='#'>
+					<img src='https://confiancacriador.digital/assets/img/email/apple.svg' />
+				</a>
+				<a href='#'>
+					<img src='https://confiancacriador.digital/assets/img/email/android.svg' />
+				</a>
+			</div>
+	
+			<div style='width:100%; margin-top: 30px;'>
+				<h4>6 – Nossos Termos de Uso e Políticas de Privacidade:</h4>
+				<a  href='https://confiancacriador.digital/termos/termos_de_uso.pdf' target='_blank' style='text-decoration:none;'>
+					<span style='width: 100px; height: 30px; padding: 10px 30px; border-radius: 10px; text-align:center; background-color: #1A1A1A; color: #ffffff;'> Baixar / Visualizar </span>
+				</a>
+			</div>
+			<br>
+		";
+
+	
+
+
+		# MENSAGEM PARA O ADMINSTRADOR CONFIANCA
+		$mensagem2 =
+		"	<div style='margin-top: 30px;'>
+				<h1 style='color: #EC6608; margin-bottom: 0'> OLÁ CONFIANÇA!</h1>
+				<h3 style='margin-top: 0;'>Recebemos um novo cadastro no Confiança Criador.</h3>
+				<p class='margin-top: 30px;'>O cliente: {$nome_usuario} se cadastrou pelo aplicativo e forneceu as seguintes informações:</p>
+			</div>
+		
+			<div style='width:100%; margin-top: 30px;'>
+				<h4> 1 - Plano escolhido:</h4>
+				<p style='margin: 3px;'>Plano:    	 <b style='color: #EC6608'>GRÁTIS - PERÍODO DE TESTES</b></p>
+				<p style='margin: 3px;'>Período:  	 <b>{$num_dias_plano_gratis} dias</b> (Até {$data_final_plano_gratis_format})</p>
+				<p style='margin: 3px;'>Contratação: <b>{$DATA_HORA_ATUAL}</b></p>
+			</div>
+		
+			<div style='width:100%; margin-top: 30px;'>
+				<h4>2 - Dados cadastrais:</h4>
+				<p style='margin: 3px;'>Nome:          <b style='color: #EC6608'>{$usuario->nome_razao_social}</b></p>
+				<p style='margin: 3px;'>Fazenda/Haras: <b>{$usuario->nome_propriedade_fazenda}</b></p>
+				<p style='margin: 3px;'>Plantel:       <b>{$usuario->numero_animais_plantel} Animais</b></p>
+				<p style='margin: 3px;'>Cidade / UF:   <b>{$usuario->nome_cidade}/{$usuario->sigla_estado}</b></p>
+
+				<p style='margin: 3px;'>E-mail:  <b>{$usuario->email_usuario}</b></p>
+				<p style='margin: 3px;'>Celular: <b>{$usuario->telefone_celular}</b></p>
+			</div>
+		";
+
+		
+
+		return $tipo == 1 ? $mensagem1 : $mensagem2;
+	} # msg_confirmacao_cadastro
 
 
 
