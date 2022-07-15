@@ -96,6 +96,7 @@ class UsuarioController extends PessoaController
 
 		}
 
+
 		
 		if ( !vazio($msg_erro) ) {
 			

@@ -705,15 +705,15 @@ class UsuarioModel extends PessoaModel
 
 		// echo $this->msg_confirmacao_cadastro($usuario, 2); exit;
 
-		@dispara_email($this->msg_confirmacao_cadastro($usuario, 2), 'NOVO CADASTRO - APLICATIVO!', EMAIL_CADASTRO);	
+		// @dispara_email($this->msg_confirmacao_cadastro($usuario, 2), 'NOVO CADASTRO - APLICATIVO!', EMAIL_CADASTRO);	
 
 		// sleep(2);
-		@dispara_email($this->msg_confirmacao_cadastro($usuario, 1), 'CONFIRMAÇÃO DE CADASTRO!', $usuario->email_usuario);
+		// @dispara_email($this->msg_confirmacao_cadastro($usuario, 1), 'CONFIRMAÇÃO DE CADASTRO!', $usuario->email_usuario);
 		
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+		$connect->commit();
 		if ( !modo_dev() ) {
-			$connect->commit();
 		}
 		return sucesso("CADASTRO REALIZADO COM SUCESSO!" . (modo_dev() ? " - [$id_user_adicionado]" : ''), [$usuario], 201);
 	}

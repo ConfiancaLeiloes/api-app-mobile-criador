@@ -14,8 +14,8 @@ function modo_dev() {
   return
     isset($_GET['debug']) ||
     isset($_GET['modo_dev']) ||
-    isset($_POST['modo_dev']) ||
-    $_SERVER['SERVER_NAME'] == 'localhost';
+    isset($_POST['modo_dev']);
+    // || $_SERVER['SERVER_NAME'] == 'localhost';
 }
 
 /**
@@ -98,7 +98,8 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
     'tem_permissao' => isset($_SESSION['tem_permissao']) ? $_SESSION['tem_permissao'] : true,
     
     'http_status_code' => $http_status_code,
-    'data_hora_requisicao' => DATA_HORA_ATUAL
+    'data_hora_requisicao' => DATA_HORA_ATUAL,
+    'server_name' => $_SERVER['SERVER_NAME']
   ];
 
   if ( !isset($_SESSION['debug']) ) {

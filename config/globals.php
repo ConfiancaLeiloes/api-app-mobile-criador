@@ -2,6 +2,11 @@
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+define('ONLINE', strpos($_SERVER['SERVER_NAME'], 'localhost') !== false ? false : true);
+define('LOCAL', !ONLINE);
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 $DATA_ATUAL = date('Y-m-d');
 $HORA_ATUAL = date('H:i:s');
 $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
@@ -24,11 +29,11 @@ define('HORA_ATUAL', $HORA_ATUAL);
 define('DATA_HORA_ATUAL', $DATA_ATUAL .' '. $HORA_ATUAL);
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$path_fotos_animais = 'confiancacriador.digital/arquivos/fotos_animais';
 
 define('PATH_CDN', '/home/wwgrup/cdn'); # Caminho onde as imagens dos animais serão cadastradas
-define('PATH_UPLOAD_FOTOS', $_SERVER['DOCUMENT_ROOT'] . '/tests/imgs'); # Provisório -> Para testes
-define('URL_FOTOS', 'https://confiancacriador.digital/arquivos/fotos_animais/');
-// define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/");
+define('PATH_UPLOAD_FOTOS',  ONLINE ? "/home/wwgrup/public_html/{$path_fotos_animais}" : DOCUMENT_ROOT . '/tests/imgs');
+define('URL_FOTOS', "https://{$path_fotos_animais}/");
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
