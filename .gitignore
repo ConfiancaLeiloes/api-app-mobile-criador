@@ -4,6 +4,8 @@
 # Configurações locais do VSCode
 .vscode/
 
+logs/requests/
+
 error_log
 
 #
