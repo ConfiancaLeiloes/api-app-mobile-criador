@@ -2,13 +2,20 @@
 
 class ConexaoModel 
 {
-   
    static public function conectar()
-    {
+   {
+        $HOST = 'confiancacriador.digital';
+
+        # DADOS DO BANCO DE TESTES
         $DB_NAME = 'gc_confianca_criador_dev';
-        $HOST    = 'confiancacriador.digital';
-        $USER    = 'gc_user_dev';
-        $PASS    = 'Xou93FTtDlUZ';
+        $USER = 'gc_user_dev';
+        $PASS = 'Xou93FTtDlUZ';
+        
+        # DADOS DO BANCO DE PRODUÇÃO
+        // $DB_NAME = 'gc_confianca_criador';
+        // $USER = 'gc_criador';
+        // $PASS = 'YDs-p(9Nr$%3';
+
         try {
             return new \PDO("mysql:dbname={$DB_NAME};host={$HOST};charset=utf8", $USER, $PASS);
         }

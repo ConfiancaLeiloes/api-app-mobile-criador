@@ -27,7 +27,8 @@ define('DATA_HORA_ATUAL', $DATA_ATUAL .' '. $HORA_ATUAL);
 
 define('PATH_CDN', '/home/wwgrup/cdn'); # Caminho onde as imagens dos animais serão cadastradas
 define('PATH_UPLOAD_FOTOS', $_SERVER['DOCUMENT_ROOT'] . '/tests/imgs'); # Provisório -> Para testes
-define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/");
+define('URL_FOTOS', 'https://confiancacriador.digital/arquivos/fotos_animais/');
+// define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/");
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

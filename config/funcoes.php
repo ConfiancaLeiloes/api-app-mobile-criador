@@ -101,7 +101,6 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
     'data_hora_requisicao' => DATA_HORA_ATUAL
   ];
 
-
   if ( !isset($_SESSION['debug']) ) {
     unset($retorno['debug']);
   }
@@ -111,12 +110,9 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   }
 
   $_SESSION['retorno'] = $retorno; # SEM O DATA
-
   $retorno['data'] = $dados;
 
-
   return json_encode($retorno);
-
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

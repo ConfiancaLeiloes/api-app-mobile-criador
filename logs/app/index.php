@@ -33,18 +33,16 @@ $data_corrente = date('Y-m-d');
 while ( true ) {
 
   if ( !isset($array_geral[$data_corrente]) ) {
-    echo "<br><br><h3>FINISH!!</h3>";
+    echo "<br><h3>FINISH!!</h3>";
     break;
   }
 
-  echo "<h3>LOGS DE {$data_corrente} (".count($array_geral[$data_corrente]).")</h3>";
+  echo "<h2>LOGS DE {$data_corrente} (".count($array_geral[$data_corrente]).")</h3>";
   
   rsort($array_geral[$data_corrente]);
 
+  $i = 0;
   foreach ($array_geral[$data_corrente] as $nome_arquivo) {
-
-    
-
     echo '<p>';
       
       echo str_pad(++$i, 3, '0', STR_PAD_LEFT), ' - ';

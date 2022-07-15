@@ -12,3 +12,7 @@ a:hover {
   color: yellow;
   font-size: 101%;
 }
+
+h2 {
+  margin-bottom: 5px
+}
