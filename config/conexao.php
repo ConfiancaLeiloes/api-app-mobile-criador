@@ -3,15 +3,14 @@
 class ConexaoModel 
 {
    
-   static public function conectar()
+    static public function conectar()
     {
-        $DB_NAME = "gc_confianca_criador";
-        $HOST    = "confiancacriador.digital";
-        $USER    = "gc_criador";
-        $PASS    = "YDs-p(9Nr$%3";
+        $DB_NAME = 'gc_confianca_criador_dev';
+        $HOST    = 'confiancacriador.digital';
+        $USER    = 'gc_user_dev';
+        $PASS    = 'Xou93FTtDlUZ';
         try {
-            $pdo = new \PDO("mysql:dbname=gc_confianca_criador;host=confiancacriador.digital;charset=utf8", "gc_criador", "YDs-p(9Nr$%3");
-            return $pdo;
+            return new \PDO("mysql:dbname={$DB_NAME};host={$HOST};charset=utf8", $USER, $PASS);
         }
         catch (\Exception $e) {
             echo "Erro ao conectar com o banco de dados! " . $e;

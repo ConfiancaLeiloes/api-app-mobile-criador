@@ -736,7 +736,8 @@ class AnimaisModel
             $filtro_grupo = (int)$grupo == 99 ? "" : " AND tab_animais.id_grupo = $grupo  ";
 
             $query_sql = 
-                        "SELECT
+                        "
+                        SELECT
                           *
                         FROM
                           (
@@ -792,8 +793,8 @@ class AnimaisModel
                                 LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
                                 LEFT JOIN tab_estados ON tab_estados.id_estado = tab_cidades.id_uf
                               WHERE
-                                tab_animais.id_tipo_animal = :ID_TIPO_ANIMAL
-                                AND tab_animais.id_situacao = :ID_SITUACAO
+                                tab_animais.id_tipo_animal = '$id_tipo_animal'
+                                AND tab_animais.id_situacao = '$id_situacao'
                                 AND (
                                   tab_animais.nome LIKE '%$palavra_chave%'
                                   OR tab_animais.marca LIKE '%$palavra_chave%'
@@ -805,7 +806,7 @@ class AnimaisModel
                                   OR tab_socios.informacoes_diversas LIKE '%$palavra_chave%'
                                   OR tab_animais.informacoes_diversas LIKE '%$palavra_chave%'
                                 )
-                                AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                                AND tab_animais.id_usuario_sistema = '$id_proprietario'
                                 $filtro_grupo
                               GROUP BY
                                 tab_animais.id_animal
@@ -865,8 +866,8 @@ class AnimaisModel
                                 LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
                                 LEFT JOIN tab_estados ON tab_estados.id_estado = tab_cidades.id_uf
                               WHERE
-                                tab_animais.id_tipo_animal = :ID_TIPO_ANIMAL
-                                AND tab_animais.id_situacao = :ID_SITUACAO
+                                tab_animais.id_tipo_animal = '$id_tipo_animal'
+                                AND tab_animais.id_situacao = '$id_situacao'
                                 AND (
                                   tab_animais.nome LIKE '%$palavra_chave%'
                                   OR tab_animais.marca LIKE '%$palavra_chave%'
@@ -878,7 +879,7 @@ class AnimaisModel
                                   OR tab_socios.informacoes_diversas LIKE '%$palavra_chave%'
                                   OR tab_animais.informacoes_diversas LIKE '%$palavra_chave%'
                                 )
-                                AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                                AND tab_animais.id_usuario_sistema = '$id_proprietario'
                                 $filtro_grupo
                               GROUP BY
                                 tab_animais.id_animal
@@ -938,8 +939,8 @@ class AnimaisModel
                                 LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
                                 LEFT JOIN tab_estados ON tab_estados.id_estado = tab_cidades.id_uf
                               WHERE
-                                tab_animais.id_tipo_animal = :ID_TIPO_ANIMAL
-                                AND tab_animais.id_situacao = :ID_SITUACAO
+                                tab_animais.id_tipo_animal = '$id_tipo_animal'
+                                AND tab_animais.id_situacao = '$id_situacao'
                                 AND (
                                   tab_animais.nome LIKE '%$palavra_chave%'
                                   OR tab_animais.marca LIKE '%$palavra_chave%'
@@ -951,7 +952,7 @@ class AnimaisModel
                                   OR tab_socios.informacoes_diversas LIKE '%$palavra_chave%'
                                   OR tab_animais.informacoes_diversas LIKE '%$palavra_chave%'
                                 )
-                                AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                                AND tab_animais.id_usuario_sistema = '$id_proprietario'
                                 $filtro_grupo
                               GROUP BY
                                 tab_animais.id_animal
@@ -1011,8 +1012,8 @@ class AnimaisModel
                                 LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
                                 LEFT JOIN tab_estados ON tab_estados.id_estado = tab_cidades.id_uf
                               WHERE
-                                tab_animais.id_tipo_animal = :ID_TIPO_ANIMAL
-                                AND tab_animais.id_situacao = :ID_SITUACAO
+                                tab_animais.id_tipo_animal = '$id_tipo_animal'
+                                AND tab_animais.id_situacao = '$id_situacao'
                                 AND (
                                   tab_animais.nome LIKE '%$palavra_chave%'
                                   OR tab_animais.marca LIKE '%$palavra_chave%'
@@ -1024,7 +1025,7 @@ class AnimaisModel
                                   OR tab_socios.informacoes_diversas LIKE '%$palavra_chave%'
                                   OR tab_animais.informacoes_diversas LIKE '%$palavra_chave%'
                                 )
-                                AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                                AND tab_animais.id_usuario_sistema = '$id_proprietario'
                                 $filtro_grupo
                               GROUP BY
                                 tab_animais.id_animal
@@ -1084,8 +1085,8 @@ class AnimaisModel
                                 LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
                                 LEFT JOIN tab_estados ON tab_estados.id_estado = tab_cidades.id_uf
                               WHERE
-                                tab_animais.id_tipo_animal = :ID_TIPO_ANIMAL
-                                AND tab_animais.id_situacao = :ID_SITUACAO
+                                tab_animais.id_tipo_animal = '$id_tipo_animal'
+                                AND tab_animais.id_situacao = '$id_situacao'
                                 AND (
                                   tab_animais.nome LIKE '%$palavra_chave%'
                                   OR tab_animais.marca LIKE '%$palavra_chave%'
@@ -1097,7 +1098,7 @@ class AnimaisModel
                                   OR tab_socios.informacoes_diversas LIKE '%$palavra_chave%'
                                   OR tab_animais.informacoes_diversas LIKE '%$palavra_chave%'
                                 )
-                                AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                                AND tab_animais.id_usuario_sistema = '$id_proprietario'
                                 $filtro_grupo
                               GROUP BY
                                 tab_animais.id_animal
@@ -1157,8 +1158,8 @@ class AnimaisModel
                                 LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
                                 LEFT JOIN tab_estados ON tab_estados.id_estado = tab_cidades.id_uf
                               WHERE
-                                tab_animais.id_tipo_animal = :ID_TIPO_ANIMAL
-                                AND tab_animais.id_situacao = :ID_SITUACAO
+                                tab_animais.id_tipo_animal = '$id_tipo_animal'
+                                AND tab_animais.id_situacao = '$id_situacao'
                                 AND (
                                   tab_animais.nome LIKE '%$palavra_chave%'
                                   OR tab_animais.marca LIKE '%$palavra_chave%'
@@ -1170,7 +1171,7 @@ class AnimaisModel
                                   OR tab_socios.informacoes_diversas LIKE '%$palavra_chave%'
                                   OR tab_animais.informacoes_diversas LIKE '%$palavra_chave%'
                                 )
-                                AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                                AND tab_animais.id_usuario_sistema = '$id_proprietario'
                                 $filtro_grupo
                               GROUP BY
                                 tab_animais.id_animal
@@ -1230,8 +1231,8 @@ class AnimaisModel
                                 LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
                                 LEFT JOIN tab_estados ON tab_estados.id_estado = tab_cidades.id_uf
                               WHERE
-                                tab_animais.id_tipo_animal = :ID_TIPO_ANIMAL
-                                AND tab_animais.id_situacao = :ID_SITUACAO
+                                tab_animais.id_tipo_animal = '$id_tipo_animal'
+                                AND tab_animais.id_situacao = '$id_situacao'
                                 AND (
                                   tab_animais.nome LIKE '%$palavra_chave%'
                                   OR tab_animais.marca LIKE '%$palavra_chave%'
@@ -1243,7 +1244,7 @@ class AnimaisModel
                                   OR tab_socios.informacoes_diversas LIKE '%$palavra_chave%'
                                   OR tab_animais.informacoes_diversas LIKE '%$palavra_chave%'
                                 )
-                                AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                                AND tab_animais.id_usuario_sistema = '$id_proprietario'
                                 $filtro_grupo
                               GROUP BY
                                 tab_animais.id_animal
@@ -1271,8 +1272,7 @@ class AnimaisModel
                                   DATE_FORMAT(tab_socios.permanencia_socio_01, '%d/%m/%Y'),
                                   IF(
                                     tab_socios.adm_08 = '3',
-                                    '
-                                    Sócio Administrador',
+                                    '\nSócio Administrador',
                                     ''
                                   )
                                 ) AS NOME_SOCIO,
@@ -1304,8 +1304,8 @@ class AnimaisModel
                                 LEFT JOIN tab_cidades ON tab_cidades.id_cidade = tab_pessoas.id_cidade
                                 LEFT JOIN tab_estados ON tab_estados.id_estado = tab_cidades.id_uf
                               WHERE
-                                tab_animais.id_tipo_animal = :ID_TIPO_ANIMAL
-                                AND tab_animais.id_situacao = :ID_SITUACAO
+                                tab_animais.id_tipo_animal = '$id_tipo_animal'
+                                AND tab_animais.id_situacao = '$id_situacao'
                                 AND (
                                   tab_animais.nome LIKE '%$palavra_chave%'
                                   OR tab_animais.marca LIKE '%$palavra_chave%'
@@ -1317,7 +1317,7 @@ class AnimaisModel
                                   OR tab_socios.informacoes_diversas LIKE '%$palavra_chave%'
                                   OR tab_animais.informacoes_diversas LIKE '%$palavra_chave%'
                                 )
-                                AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                                AND tab_animais.id_usuario_sistema = '$id_proprietario'
                                 $filtro_grupo
                               GROUP BY
                                 tab_animais.id_animal
@@ -1333,16 +1333,11 @@ class AnimaisModel
                           AND COTAS_ANIMAL > 0";
 
             $pdo = $this->conn->conectar();
-            $res = $pdo->prepare($query_sql);
+            $res = $pdo->query($query_sql);
 
-            $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
-            $res->bindValue(':ID_TIPO_ANIMAL', $id_tipo_animal);
-            $res->bindValue(':ID_SITUACAO', $id_situacao);
 
             $res->execute();
             $dados = $res->fetchAll(PDO::FETCH_ASSOC);
-
-         
             if (count($dados) <= 0) return  sucesso("Nenhum Sócio foi localizado!");
             
             $somatorio = [

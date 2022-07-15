@@ -230,10 +230,13 @@ class FinanceiroModel
                         CONCAT('R$ ',FORMAT((tab_parcelas.valor_original - tab_parcelas.valor_desconto + tab_parcelas.valor_multa_juros), 2, 'de_DE')) AS VALOR_TOTAL_FINANCEIRO, 
                         tab_grupos_financeiros.descricao AS GRUPO_FINANCEIRO_FINANCEIRO, 
                         tab_contas.descricao AS CONTA_BANCARIA_FINANCEIRO,
-                        IF(ISNULL(tab_parcelas.informacoes_diversas) OR TRIM(tab_parcelas.informacoes_diversas) = '','SEM INFORMAÇÕES ADICIONAIS',tab_parcelas.informacoes_diversas) as INFORMACAO_FINANCEIRO
+                        IF(ISNULL(tab_parcelas.informacoes_diversas) OR TRIM(tab_parcelas.informacoes_diversas) = '','SEM INFORMAÇÕES ADICIONAIS',tab_parcelas.informacoes_diversas) as INFORMACAO_FINANCEIRO,
+                        COALESCE(tab_pjbank_boletos.linha_digitavel, '') AS LINHA_DIGITAVEL_BOLETO_PJBANK,
+                        COALESCE(tab_pjbank_boletos.link_boleto_pjbank, '') AS LINK_BOLETO_PJBANK
                     FROM tab_parcelas  
                         JOIN tab_centros_custos_financeiro ON tab_centros_custos_financeiro.id_parcela = tab_parcelas.id_parcela
-                                      JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber	 
+                        JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber
+                        LEFT JOIN tab_pjbank_boletos ON tab_pjbank_boletos.id_parcela = tab_parcelas.id_parcela
                         JOIN tab_grupos_financeiros ON tab_grupos_financeiros.id_grupo_financeiro = tab_centros_custos_financeiro.id_centro_custo   
                         JOIN tab_tipos_transacoes ON tab_tipos_transacoes.id_tipo_transacao = tab_grupos_financeiros.id_tipo_grupo_financeiro  
                         JOIN tab_pessoas ON tab_pessoas.id_pessoa = tab_contas_pagar_receber.id_cliente_fornecedor  
@@ -395,7 +398,7 @@ class FinanceiroModel
                             FROM tab_parcelas
                             JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber
                             JOIN tab_contas ON tab_contas.id_conta = tab_parcelas.id_conta
-                            JOIN tab_pjbank_boletos on tab_pjbank_boletos.id_parcela = tab_parcelas.id_parcela
+                            LEFT JOIN tab_pjbank_boletos on tab_pjbank_boletos.id_parcela = tab_parcelas.id_parcela
                              WHERE tab_contas_pagar_receber.id_usuario_sistema = :ID_PROPRIETARIO AND
                             tab_contas_pagar_receber.id_tipo_transacao = '92' AND
                             tab_pjbank_boletos.data_credito > CURDATE()

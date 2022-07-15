@@ -30,6 +30,7 @@ class NegociosModel
             $filtro_tipo_negocio = (int)$tipo_negocio == 2 ? " tab_compras_vendas_animais.id_tipo_negocio = '88' AND " : $filtro_tipo_negocio;
             $filtro_tipo_negocio = (int)$tipo_negocio == 3 ? " tab_compras_vendas_animais.id_tipo_negocio = '89' AND " : $filtro_tipo_negocio;
             $filtro_tipo_negocio = (int)$tipo_negocio == 4 ? " tab_compras_vendas_animais.id_tipo_negocio = '90' AND " : $filtro_tipo_negocio;
+            $filtro_tipo_negocio = (int)$tipo_negocio == 5 ? " tab_compras_vendas_animais.id_tipo_negocio = '118' AND " : $filtro_tipo_negocio;
 
             // Define o Tipo de Produto Comprado/Vendido
             $filtro_tipo_produto = (int)$tipo_produto == 1 ? "" : "" ;
