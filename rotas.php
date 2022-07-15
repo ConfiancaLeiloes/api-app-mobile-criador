@@ -19,7 +19,7 @@ $nome_metodo = str_replace('-', '_', $nome_rota);
 
 # $app->get('/modulo/metodo', ClassController::class . ':metodo');
 try {
-	
+
 	foreach ($modulos as $nome_modulo => $classe) {
 		$teste = $app->$request_method("/{$nome_modulo}/{$nome_rota}", $classe . ":{$nome_metodo}");
 	}

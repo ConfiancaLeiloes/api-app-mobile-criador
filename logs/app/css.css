@@ -1,0 +1,14 @@
+* {
+  color: white;
+  background-color: #2a2a2a;
+}
+
+p {
+  margin: 0;
+  margin-bottom: 5px;;
+}
+
+a:hover {
+  color: yellow;
+  font-size: 101%;
+}

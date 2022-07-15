@@ -110,6 +110,8 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
     $retorno['modo_dev'] = true;
   }
 
+  $_SESSION['retorno'] = $retorno; # SEM O DATA
+
   $retorno['data'] = $dados;
 
 
@@ -269,8 +271,6 @@ function valida_token($id_modulo = 0) {
     if ( $post->id_proprietario <= 0 ) {
       exit(erro("Usuário não identificado!"));
     }
-    
-    
   }
   
   
@@ -294,13 +294,13 @@ function valida_token($id_modulo = 0) {
  * @author Antonio Ferreira <@toniferreirasantos>
  * @return 
 */
-function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remetente = '') {
+function dispara_email($MENSAGEM, $assunto, $email_destinatario, $email_remetente = '') {
   
 	# APLICANDO TRIM NOS PARÂMETROS
 	$assunto 			      = trim($assunto);
 	$MENSAGEM 				  = trim($MENSAGEM);
 	$email_remetente    = trim($email_remetente);
-	$email_destinatário = trim($email_destinatário);
+	$email_destinatario = trim($email_destinatario);
 
   $email_remetente = !vazio($email_remetente) ? $email_remetente : EMAIL_COMERCIAL;
 
@@ -310,32 +310,15 @@ function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remeten
     || vazio($MENSAGEM)
     
     || vazio($email_remetente)
-    || vazio($email_destinatário)
+    || vazio($email_destinatario)
 
     || !valida_email($email_remetente)
-    || !valida_email($email_destinatário)
+    || !valida_email($email_destinatario)
   ) {
 		return false;
 	}
 
-
-	// CORPO DO E-MAIL
-  $corpo_email = 
-  "<html>
-    <body style='background:#f2f2f2 !important; padding-top: 10px !important; padding-bottom: 10px !important; font-family:sans-serif !important;'>
-      <div style='width:800px !important; margin:50px auto !important; background:#fff;'>
-        <br>
-        
-        <div style='min-height: 220px !important; padding:20px !important; text-align:center !important;'>
-          $MENSAGEM
-        </div>
-
-      </div>
-    </body>
-  </html>
-  ";
-
-
+	# CORPO DO E-MAIL
   $corpo_email =
   " <html>
       <body style='width: 800px; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-weight: normal;  color: #545454'>
@@ -365,9 +348,8 @@ function dispara_email($MENSAGEM, $assunto, $email_destinatário, $email_remeten
   require PATH_CDN  . '/php/services/TurboSMTP/TurboApiClient.php'; 
 
   $email = new Email();
-  $email->setFrom($email_remetente); # E-mail de Origem
-
-  $email->setToList(modo_dev() ? EMAIL_DEV : $email_destinatário); # E-MAIL DO REMETENTE
+  $email->setFrom($email_remetente); # E-mail de Origem (REMETENTE)
+  $email->setToList(modo_dev() ? EMAIL_DEV : $email_destinatario);
   $email->setSubject($assunto); # Assunto do E-mail
   $email->setHtmlContent($corpo_email); // Conteúdo em HTML
 

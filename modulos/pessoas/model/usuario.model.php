@@ -194,7 +194,7 @@ class UsuarioModel extends PessoaModel
 
 
 	/**
-	 * Método valida_token()
+	 * Método token_valido()
 	 * @author Antonio Ferreira <@toniferreirasantos>
 	 * @return boolean
 	*/
@@ -705,7 +705,7 @@ class UsuarioModel extends PessoaModel
 
 		// echo $this->msg_confirmacao_cadastro($usuario, 2); exit;
 
-		@dispara_email($this->msg_confirmacao_cadastro($usuario, 2), 'NOVO CADASTRO - APLICATIVO!', EMAIL_DIRETORIA);	
+		@dispara_email($this->msg_confirmacao_cadastro($usuario, 2), 'NOVO CADASTRO - APLICATIVO!', EMAIL_CADASTRO);	
 
 		// sleep(2);
 		@dispara_email($this->msg_confirmacao_cadastro($usuario, 1), 'CONFIRMAÇÃO DE CADASTRO!', $usuario->email_usuario);

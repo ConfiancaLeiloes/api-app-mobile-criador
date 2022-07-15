@@ -64,11 +64,10 @@ class UsuarioController extends PessoaController
 
 
 	/**
-	 * Método token_valido() -> Verifica a validade do token da requisição corrente
+	 * Método valida_token() -> Verifica a validade do token da requisição corrente
 	 * @author Antonio Ferreira <@toniferreirasantos>
 	 * @return boolean
 	*/
-	// public function valida_token(ServerRequestInterface $request, ResponseInterface $response) {
 	public static function valida_token() {
 		
 		// $post = (object)$_POST;

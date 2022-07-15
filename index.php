@@ -55,7 +55,7 @@ $app->setBasePath((function () {
 $errorHandler = $errorMiddleware->getDefaultErrorHandler()->forceContentType('application/json');
 
 
-include 'logs/requests.php';
+
 
 if (
     !uri_contem('/usuario/login')
@@ -70,6 +70,8 @@ if (
 try {
     require 'rotas.php';
     $app->run();
+    
+    include 'logs/requests.php'; # Registrando logs de requisições
 }
 catch (\Throwable $th) {
     @header("Status: 500 Rota não encontrada");

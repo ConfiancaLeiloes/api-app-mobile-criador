@@ -37,5 +37,9 @@ if ( !empty($request) && is_object($request) ) {
   $file_name .= $request->id_proprietario > 0 ? '_P' . str_pad($request->id_proprietario, 5, '0', STR_PAD_LEFT) : '';
   $file_name .= '--' . str_replace('/', '-', $REQUEST_URI);
 
+  if ( isset($_SESSION['retorno']) ) {
+    $obj->retorno = $_SESSION['retorno'];
+  }
+
   @file_put_contents( DOCUMENT_ROOT . "/logs/requests/{$file_name}.json", json_encode($obj));
 }

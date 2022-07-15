@@ -33,6 +33,7 @@ define('URL_FOTOS', "https://www.agrobold.com.br/agrobold_equinos/fotos_animais/
 
 # EMAILS
 define('EMAIL_DEV', 'toninhofulldev@gmail.com');
+define('EMAIL_CADASTRO', 'cadastro@confiancacriador.digital');      # Usado geralmente como Destinatário
 define('EMAIL_COMERCIAL', 'comercial@confiancacriador.digital');    # Usado geralmente como Remetente
 define('EMAIL_DIRETORIA', 'diretoria.ti@confiancaleiloes.digital'); # Usado geralmente como Destinatário
 
