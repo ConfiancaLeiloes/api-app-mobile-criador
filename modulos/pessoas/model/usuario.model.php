@@ -473,6 +473,7 @@ class UsuarioModel extends PessoaModel
 
 				nome_razao_social,
 				nome_propriedade_fazenda,
+				total_animais_plantel,
 
 				rg_ie,
 				CPF_CNPJ,
@@ -507,6 +508,7 @@ class UsuarioModel extends PessoaModel
 
 				upper(:nome_razao_social),
 				upper(:nome_propriedade_fazenda),
+				:numero_animais_plantel,
 				
 				:rg_ie,
 				:CPF_CNPJ,
@@ -558,6 +560,8 @@ class UsuarioModel extends PessoaModel
 
 		$stmt->bindParam(':id_estado', $usuario->id_estado, PDO::PARAM_INT);
 		$stmt->bindParam(':id_cidade', $usuario->id_cidade, PDO::PARAM_INT);
+
+		$stmt->bindParam(':numero_animais_plantel', $usuario->numero_animais_plantel, PDO::PARAM_INT);
 
 		$stmt->bindParam(':cep', $usuario->cep);
 		$stmt->bindParam(':Numero', $usuario->Numero);
@@ -703,18 +707,11 @@ class UsuarioModel extends PessoaModel
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		// echo $this->msg_confirmacao_cadastro($usuario, 2); exit;
-
-		// @dispara_email($this->msg_confirmacao_cadastro($usuario, 2), 'NOVO CADASTRO - APLICATIVO!', EMAIL_CADASTRO);	
-
-		// sleep(2);
+		@dispara_email($this->msg_confirmacao_cadastro($usuario, 2), 'NOVO CADASTRO - APLICATIVO!', EMAIL_CADASTRO);
 		// @dispara_email($this->msg_confirmacao_cadastro($usuario, 1), 'CONFIRMAÇÃO DE CADASTRO!', $usuario->email_usuario);
-		
 		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+		
 		$connect->commit();
-		if ( !modo_dev() ) {
-		}
 		return sucesso("CADASTRO REALIZADO COM SUCESSO!" . (modo_dev() ? " - [$id_user_adicionado]" : ''), [$usuario], 201);
 	}
 
@@ -1041,7 +1038,7 @@ class UsuarioModel extends PessoaModel
 		"	<div style='margin-top: 30px;'>
 				<h1 style='color: #EC6608; margin-bottom: 0'> OLÁ CONFIANÇA!</h1>
 				<h3 style='margin-top: 0;'>Recebemos um novo cadastro no Confiança Criador.</h3>
-				<p class='margin-top: 30px;'>O cliente: {$nome_usuario} se cadastrou pelo aplicativo e forneceu as seguintes informações:</p>
+				<p class='margin-top: 30px;'>O cliente: <b style='color: #EC6608; margin-bottom: 0'>{$usuario->nome_razao_social}</b> se cadastrou pelo aplicativo e forneceu as seguintes informações:</p>
 			</div>
 		
 			<div style='width:100%; margin-top: 30px;'>
