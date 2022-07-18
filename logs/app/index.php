@@ -28,11 +28,19 @@ foreach ( glob($_SERVER['DOCUMENT_ROOT'] . '/logs/requests/*.json') as $index =>
   array_push($array_geral[$data], $json_file);
 }
 
-
+$tentativa = 0;
 $data_corrente = date('Y-m-d');
 while ( true ) {
 
   if ( !isset($array_geral[$data_corrente]) ) {
+
+    
+    if ( $tentativa < 5 ) {
+      $tentativa++;
+      $data_corrente = date('Y-m-d', strtotime('-1 days', strtotime($data_corrente) ));
+      continue;
+    }
+
     echo "<br><h3>FINISH!!</h3>";
     break;
   }
