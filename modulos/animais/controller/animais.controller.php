@@ -103,6 +103,13 @@ class AnimaisController
         return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
     }
 
+    public function listar_animais_sem_registro(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $resultado = $this->animais->listar_animais_sem_registro($request);
+        $response->getBody()->write($resultado);
+        return $response->withStatus( json_decode($resultado)->http_status_code )->withHeader('Content-type', 'application/json');
+    }
+
 
     /**
 	 * Método cadastro()
