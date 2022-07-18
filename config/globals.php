@@ -4,6 +4,7 @@
 
 define('ONLINE', strpos($_SERVER['SERVER_NAME'], 'localhost') !== false ? false : true);
 define('LOCAL', !ONLINE);
+define('LOCALHOST', LOCAL);
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -32,7 +33,7 @@ define('DATA_HORA_ATUAL', $DATA_ATUAL .' '. $HORA_ATUAL);
 $path_fotos_animais = 'confiancacriador.digital/arquivos/fotos_animais';
 
 define('PATH_CDN', '/home/wwgrup/cdn'); # Caminho onde as imagens dos animais serão cadastradas
-define('PATH_UPLOAD_FOTOS',  ONLINE ? "/home/wwgrup/public_html/{$path_fotos_animais}" : DOCUMENT_ROOT . '/tests/imgs');
+define('PATH_UPLOAD_FOTOS', ONLINE ? "/home/wwgrup/public_html/{$path_fotos_animais}" : DOCUMENT_ROOT . '/tests/imgs');
 define('URL_FOTOS', "https://{$path_fotos_animais}/");
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,4 +44,4 @@ define('EMAIL_CADASTRO', 'cadastro@confiancacriador.digital');      # Usado gera
 define('EMAIL_COMERCIAL', 'comercial@confiancacriador.digital');    # Usado geralmente como Remetente
 define('EMAIL_DIRETORIA', 'diretoria.ti@confiancaleiloes.digital'); # Usado geralmente como Destinatário
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
