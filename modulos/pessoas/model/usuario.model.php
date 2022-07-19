@@ -206,8 +206,8 @@ class UsuarioModel extends PessoaModel
 		$query_token = 
 		"	SELECT id_pessoa, token_login_app FROM tab_pessoas
 			WHERE	(
-				token_login_app = '{$post->token}' AND 
-				id_usuario_sistema = '{$post->id_usuario}'
+				token_login_app = '{$post->token}'  
+				AND id_pessoa = '{$post->id_usuario}'
 			)
 		";
 		$stmt = $connect->prepare($query_token);
