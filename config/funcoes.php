@@ -26,7 +26,18 @@ function modo_dev() {
  * @return 
 */
 function banco_teste() {
-  return isset($_GET['banco_teste']) || isset($_POST['banco_teste']);
+
+  $return =
+    ( isset($_GET['banco_teste']) && (int)trim($_GET['banco_teste'] ) == 1) ||
+    ( isset($_POST['banco_teste']) && (int)trim($_POST['banco_teste']) == 1) ;
+
+
+  if ( !$return ) {
+    $body = @body_params();
+    return isset($body->banco_teste) && (int)trim($body->banco_teste) == 1;
+  }
+
+  return $return;
 }
 
 /**
@@ -103,6 +114,7 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   $retorno = [
     'codigo' => (boolean)$resultado,
     'message' => $mensagem,
+    'banco_teste' => LOCALHOST || banco_teste(),
     'debug' => $_SESSION['debug'],
     
     'token_valido' => isset($_SESSION['token_valido']) ? $_SESSION['token_valido'] : true,
@@ -121,9 +133,6 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
     $retorno['modo_dev'] = true;
   }
 
-  if ( LOCALHOST || banco_teste() ) {
-    $retorno['banco_teste'] = true;
-  }
 
   $_SESSION['retorno'] = $retorno; # SEM O DATA
   $retorno['data'] = $dados;
