@@ -19,7 +19,9 @@ class ConexaoModel
         }
 
         try {
-            return new \PDO("mysql:dbname={$DB_NAME};host={$HOST};charset=utf8", $USER, $PASS);
+            $conn = new \PDO("mysql:dbname={$DB_NAME};host={$HOST};charset=utf8", $USER, $PASS);
+            $conn->exec("set names utf8");
+            return $conn;
         }
         catch (\Exception $e) {
             echo "Erro ao conectar com o banco de dados! " . $e;
