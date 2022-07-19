@@ -12,7 +12,7 @@ class ConexaoModel
         $PASS = 'YDs-p(9Nr$%3';        
 
         # DADOS DO BANCO DE TESTES
-        if ( LOCALHOST ) {   
+        if ( LOCALHOST || banco_teste() ) {   
             $DB_NAME = 'gc_confianca_criador_dev';
             $USER = 'gc_user_dev';
             $PASS = 'Xou93FTtDlUZ';

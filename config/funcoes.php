@@ -17,6 +17,17 @@ function modo_dev() {
     isset($_POST['modo_dev']);
     // || $_SERVER['SERVER_NAME'] == 'localhost';
 }
+	
+
+
+/**
+ * Função
+ * @author Antonio Ferreira <@toniferreirasantos>
+ * @return 
+*/
+function banco_teste() {
+  return isset($_GET['banco_teste']) || isset($_POST['banco_teste']);
+}
 
 /**
  * Função
@@ -108,6 +119,10 @@ function retorno($resultado, $mensagem, $http_status_code = 200, $dados = []) {
   
   if ( modo_dev() ) {
     $retorno['modo_dev'] = true;
+  }
+
+  if ( LOCALHOST || banco_teste() ) {
+    $retorno['banco_teste'] = true;
   }
 
   $_SESSION['retorno'] = $retorno; # SEM O DATA
