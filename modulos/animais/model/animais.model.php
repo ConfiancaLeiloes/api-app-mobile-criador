@@ -1635,7 +1635,75 @@ class AnimaisModel
 
 
 
+    public function listar_animais_sem_registro(ServerRequestInterface $request)
+    {   
+        $url_fotos = URL_FOTOS;
+        $params = (array)$request->getParsedBody();
+        $id_proprietario = (int)trim($params['id_proprietario']);
 
+        if (!$id_proprietario) return erro("Proprietário com identificação incorreta!");
+
+        $query = "SELECT
+                        tab_animais.registro_associacao as DETALHES_REGISTRO,
+                        tab_animais.id_animal AS ID_ANIMAL,
+                        tab_animais.nome AS NOME_ANIMAL,
+                        UPPER(tab_grupo_animais.descricao) as GRUPO_ANIMAL,  
+                        tab_animais.nome as NOME_ANIMAL,
+                        tab_racas.descricao AS RACA_ANIMAL,
+                        tab_racas.id_raca AS ID_RACA_ANIMAL, 
+                        UPPER(tab_animais.marca) as MARCA_ANIMAL, 
+                        UPPER(tab_sexos.sexo_animal) as SEXO_ANIMAL, 
+                        DATE_FORMAT(tab_animais.data_nascimento, '%d/%m/%Y') as NASCIMENTO_ANIMAL, 
+                        COALESCE(tab_pai_animal.nome, '') as PAI_ANIMAL, 
+                        COALESCE(tab_mae_animal.nome, '') as MAE_ANIMAL, 
+                        UPPER(tab_situacoes.descricao) as DESCRICAO_SITUACAO_ANIMAL,  
+                        IF(ISNULL(tab_socios.cotas_socio_01),'0.00',tab_socios.cotas_socio_01) as COTAS_ANIMAL,
+                        IF(tab_animais.foto_perfil_animal = 'sem_foto.jpg' OR ISNULL(tab_animais.foto_perfil_animal), 'sem_foto.jpg' ,CONCAT('$url_fotos',tab_animais.foto_perfil_animal)) as FOTO_ANIMAL,
+                        (
+                            CASE 
+                                WHEN tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 > 0 AND tab_animais.id_situacao_vida = '15' THEN '1' 
+                                WHEN tab_socios.cotas_socio_01 IS NULL OR tab_socios.cotas_socio_01 = 0 AND tab_compras_vendas_animais.id_situacao_negocio = '42' THEN '2'
+                                WHEN tab_animais.id_situacao_vida = '16' THEN '3'
+                                WHEN tab_animais.id_vender = '14' THEN '4'
+                                ELSE '5'
+                            END
+                        ) as TIPO_BAIXA 
+                        FROM tab_animais  
+                        JOIN tab_racas     ON tab_animais.id_raca = tab_racas.id_raca  
+                        JOIN tab_sexos     ON tab_sexos.id_sexo = tab_animais.id_sexo   
+                        JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_animais.id_situacao   
+                        JOIN tab_grupo_animais ON tab_grupo_animais.id_grupo_animal = tab_animais.id_grupo
+                        LEFT JOIN tab_animais  AS tab_pai_animal ON tab_pai_animal.id_animal = tab_animais.id_pai  
+                        LEFT JOIN tab_animais  AS tab_mae_animal ON tab_mae_animal.id_animal = tab_animais.id_mae   
+                        LEFT JOIN tab_socios   ON tab_socios.id_animal = tab_animais.id_animal   
+                        LEFT JOIN tab_compras_vendas_animais ON tab_compras_vendas_animais.id_produto_animal = tab_animais.id_animal
+                        WHERE
+                            NOT tab_animais.registro_associacao REGEXP '[0-9]+'
+                            AND tab_animais.id_usuario_sistema = :ID_PROPRIETARIO
+                            AND tab_animais.id_situacao_cadastro = '11'
+                        GROUP BY tab_animais.id_animal  
+                        ORDER BY tab_animais.nome ASC
+        ";
+        try {
+
+            $pdo = $this->conn->conectar();
+            $res = $pdo->prepare($query);
+            $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
+            $res->execute();
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
+                
+            if (count($dados) <= 0) return sucesso("Não foi encontrado animal sem registro!");
+               
+            
+            foreach ($dados as $key => $value) {
+                $dados[$key]["CONTADOR"]    = $key+1;
+            }
+
+            return sucesso("", ["dados"=>$dados]);
+        } catch (\Throwable $th) {
+            throw new Exception($th);
+        }
+    }
 
 
 
@@ -2215,15 +2283,18 @@ class AnimaisModel
 
         $connect = $this->conn->conectar();
         if( !is_numeric($post->id_sexo) ) return erro('campo [SEXO] inválido! #0'); # Não Informado(1), Macho(2), Fêmea(3)
-
         if( !in_array($post->id_sexo, [0, 2, 3]) ) return erro('campo [SEXO] inválido!'); # Não Informado(1), Macho(2), Fêmea(3)
-
+        
         $SUBQUERY_SEXO = $post->id_sexo > 0 ? " AND id_sexo = '{$post->id_sexo}' " : " AND id_sexo IN (2, 3) ";
 
         $query =
 		"   SELECT 
-                id_animal, nome, id_sexo
+                id_animal, nome, id_sexo,
+
+                tab_animais.id_grupo,
+                tab_grupo_animais.descricao AS grupo
             FROM tab_animais
+            JOIN tab_grupo_animais ON tab_animais.id_grupo = tab_grupo_animais.id_grupo_animal
             WHERE (
                 id_usuario_sistema = :id_proprietario
                 AND id_situacao_vida = '15' -- VIVOS
