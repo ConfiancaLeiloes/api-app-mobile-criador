@@ -20,6 +20,8 @@ class FinanceiroModel
 
         if (!$tipo_movimentacao || !$data_inicial || !$id_proprietario || !$situacao_financeiro) return erro("Parâmetros inválidos ou faltantes!");
 
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 16);
+
         try {
 
             // Define o Tipo de Movimentação
@@ -196,6 +198,8 @@ class FinanceiroModel
             throw new Exception($th->getMessage(), (int)$th->getCode());
         }        
     }
+
+    
     public function detalhes_financeiro_conta_pagar_receber(ServerRequestInterface $request)
     {
         $params              = (array)$request->getParsedBody();
@@ -203,6 +207,8 @@ class FinanceiroModel
         $id_financeiro       = $params['id_financeiro'];
 
         if (!$id_proprietario || trim($id_financeiro) == "" || !$id_financeiro) return erro("Transação Financeira ou Proprietário com identificação incorreta!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 16);
 
         try {
 
@@ -230,10 +236,13 @@ class FinanceiroModel
                         CONCAT('R$ ',FORMAT((tab_parcelas.valor_original - tab_parcelas.valor_desconto + tab_parcelas.valor_multa_juros), 2, 'de_DE')) AS VALOR_TOTAL_FINANCEIRO, 
                         tab_grupos_financeiros.descricao AS GRUPO_FINANCEIRO_FINANCEIRO, 
                         tab_contas.descricao AS CONTA_BANCARIA_FINANCEIRO,
-                        IF(ISNULL(tab_parcelas.informacoes_diversas) OR TRIM(tab_parcelas.informacoes_diversas) = '','SEM INFORMAÇÕES ADICIONAIS',tab_parcelas.informacoes_diversas) as INFORMACAO_FINANCEIRO
+                        IF(ISNULL(tab_parcelas.informacoes_diversas) OR TRIM(tab_parcelas.informacoes_diversas) = '','SEM INFORMAÇÕES ADICIONAIS',tab_parcelas.informacoes_diversas) as INFORMACAO_FINANCEIRO,
+                        COALESCE(tab_pjbank_boletos.linha_digitavel, '') AS LINHA_DIGITAVEL_BOLETO_PJBANK,
+                        COALESCE(tab_pjbank_boletos.link_boleto_pjbank, '') AS LINK_BOLETO_PJBANK
                     FROM tab_parcelas  
                         JOIN tab_centros_custos_financeiro ON tab_centros_custos_financeiro.id_parcela = tab_parcelas.id_parcela
-                                      JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber	 
+                        JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber
+                        LEFT JOIN tab_pjbank_boletos ON tab_pjbank_boletos.id_parcela = tab_parcelas.id_parcela
                         JOIN tab_grupos_financeiros ON tab_grupos_financeiros.id_grupo_financeiro = tab_centros_custos_financeiro.id_centro_custo   
                         JOIN tab_tipos_transacoes ON tab_tipos_transacoes.id_tipo_transacao = tab_grupos_financeiros.id_tipo_grupo_financeiro  
                         JOIN tab_pessoas ON tab_pessoas.id_pessoa = tab_contas_pagar_receber.id_cliente_fornecedor  
@@ -259,16 +268,19 @@ class FinanceiroModel
         }        
     }
 
+
     public function listar_grupos_financeiros(ServerRequestInterface $request)
     {
-        $params             = (array)$request->getParsedBody();
-        $id_proprietario    = $params['id_proprietario'];
-        $palavra_chave      = $params['palavra_chave'];
-        $data_inicial       = $params['data_inicial'];
-        $data_final         = $params['data_final'];
-        $tipo_grupo         = $params['tipo_grupo'];
+        $params          = (array)$request->getParsedBody();
+        $id_proprietario = $params['id_proprietario'];
+        $palavra_chave   = $params['palavra_chave'];
+        $data_inicial    = $params['data_inicial'];
+        $data_final      = $params['data_final'];
+        $tipo_grupo      = $params['tipo_grupo'];
 
         if (!$id_proprietario || !$tipo_grupo) return erro("Parâmetros inválidos ou faltantes!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 17);
 
         try {
 
@@ -344,4 +356,84 @@ class FinanceiroModel
         }        
     }
 
+
+    public function listar_saldo_cliente(ServerRequestInterface $request)
+    {
+        $params             = (array)$request->getParsedBody();
+        $id_proprietario    = $params['id_proprietario'];
+
+        if (!$id_proprietario) return erro("Parâmetros inválidos ou faltantes!");
+        // $user = new UsuarioController();
+        // $user->checa_permissao_acesso($id_proprietario, 16);
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 16);
+        
+        try {
+            
+            $query_sql = 
+                        "SELECT 
+                        COALESCE((TOTAL_RECEBIDO - TOTAL_PAGO + SALDO_INICIAL- SALDO_BLOQUEADO), 0) AS SALDO_DISPONIVEL,
+                        COALESCE(SALDO_BLOQUEADO, 0) AS SALDO_BLOQUEADO
+                    FROM
+                    (
+                        SELECT
+                        (
+                            SELECT
+                                COALESCE(SUM(tab_parcelas.valor_original),0) + COALESCE(SUM(tab_parcelas.valor_multa_juros),0) - COALESCE(SUM(tab_parcelas.valor_desconto),0)
+                            FROM tab_parcelas
+                            JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber
+                            JOIN tab_contas ON tab_contas.id_conta = tab_parcelas.id_conta
+                            WHERE tab_contas_pagar_receber.id_usuario_sistema = :ID_PROPRIETARIO AND
+                            tab_contas_pagar_receber.id_tipo_transacao = '92' AND
+                            tab_parcelas.id_situacao = '50' AND tab_contas.id_tipo_conta IN('1','2','3') AND 
+                            NOT tab_parcelas.id_situacao = '52'
+                        ) AS TOTAL_RECEBIDO,
+                        (
+                            SELECT
+                                COALESCE(SUM(tab_parcelas.valor_original),0) + COALESCE(SUM(tab_parcelas.valor_multa_juros),0) - COALESCE(SUM(tab_parcelas.valor_desconto),0)
+                            FROM tab_parcelas
+                            JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber
+                            JOIN tab_contas ON tab_contas.id_conta = tab_parcelas.id_conta
+                            WHERE tab_contas_pagar_receber.id_usuario_sistema = :ID_PROPRIETARIO AND
+                            tab_contas_pagar_receber.id_tipo_transacao = '91' AND
+                            tab_parcelas.id_situacao = '50' AND tab_contas.id_tipo_conta IN('1','2','3') AND 
+                            NOT tab_parcelas.id_situacao = '52'
+                        ) AS TOTAL_PAGO,
+                        (
+                            SELECT
+                            SUM(tab_contas.saldo_inicial_conta)
+                            FROM tab_contas
+                            WHERE tab_contas.id_usuario_sistema = :ID_PROPRIETARIO AND tab_contas.id_tipo_conta IN('1','2','3')
+                        ) AS SALDO_INICIAL,
+                        (
+                            SELECT
+                                SUM(tab_parcelas.valor_original - tab_parcelas.valor_desconto + tab_parcelas.valor_multa_juros)
+                            FROM tab_parcelas
+                            JOIN tab_contas_pagar_receber ON tab_contas_pagar_receber.id_conta_pagar_receber = tab_parcelas.id_conta_pagar_receber
+                            JOIN tab_contas ON tab_contas.id_conta = tab_parcelas.id_conta
+                            JOIN tab_pjbank_boletos on tab_pjbank_boletos.id_parcela = tab_parcelas.id_parcela
+                             WHERE tab_contas_pagar_receber.id_usuario_sistema = :ID_PROPRIETARIO AND
+                            tab_contas_pagar_receber.id_tipo_transacao = '92' AND
+                            tab_pjbank_boletos.data_credito > CURDATE()
+                        ) AS SALDO_BLOQUEADO
+                    ) AS TAB_SALDO_DISPONIVEL"
+                        ;
+
+            $pdo = $this->conn->conectar();
+            $res = $pdo->prepare($query_sql);
+            $res->bindValue(':ID_PROPRIETARIO', $id_proprietario);
+            $res->execute();  
+            
+            if ($res->rowCount() <= 0 ) return erro("Não há saldo bloqueado!", 200);
+
+            $dados = $res->fetchAll(PDO::FETCH_ASSOC);
+            
+            return sucesso("", ["dados"=>$dados]);
+        } 
+        catch (\Throwable $th) {
+            throw new Exception($th->getMessage(), (int)$th->getCode());
+        }        
+    }
+
+   
 }

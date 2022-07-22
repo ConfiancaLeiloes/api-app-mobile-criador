@@ -17,8 +17,10 @@ class SanitarioModel
         $data_final         = @$params['data_final'];
         $situacao_controle  = @$params['situacao_controle'];
 
-        if (!@$id_proprietario || !$data_inicial || !$data_final || !$situacao_controle) 
-            return erro("Parâmetros inválidos ou faltantes!");
+        if (!@$id_proprietario || !$data_inicial || !$data_final || !$situacao_controle) return erro("Parâmetros inválidos ou faltantes!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 9);
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 10);
         
         // Define o Grupo
         $filtro_situacao_sanitario = (int)$situacao_controle == 1 ? "" : "" ;
@@ -37,7 +39,9 @@ class SanitarioModel
                         UPPER(tab_situacoes.descricao) as SITUACAO_SANITARIO,
                         UPPER(tab_pessoas.nome_razao_social) as RESPONSAVEL_SANITARIO,
                         COUNT(tab_animais_manejo.id_animal_manejo) as QUANTIDADE_ANIMAIS_SANITARIO,
-                        tab_controle_sanitario.informacoes_diversas as DETALHES_SANITARIO
+                        tab_controle_sanitario.informacoes_diversas as DETALHES_SANITARIO,
+                        tab_animais.nome as NOME_ANIMAL,
+                        tab_animais.id_animal as ID_ANIMAL
                     FROM tab_controle_sanitario
                         JOIN tab_situacoes ON tab_situacoes.id_situacao = tab_controle_sanitario.id_situacao
                         JOIN tab_pessoas ON tab_pessoas.id_pessoa = tab_controle_sanitario.id_veterinario_colaborador
@@ -55,7 +59,7 @@ class SanitarioModel
                             tab_pessoas.nome_razao_social LIKE '%$palavra_chave%'
                         ) AND 
                         tab_controle_sanitario.id_usuario_sistema = :ID_PROPRIETARIO
-                    GROUP BY tab_controle_sanitario.id_manejo 
+                    GROUP BY tab_animais_manejo.id_animal_manejo
                     ORDER BY tab_controle_sanitario.data_inicio ASC";
 
             $pdo = $this->conn->conectar();
@@ -69,20 +73,54 @@ class SanitarioModel
             $situacao_agendado  = 0;
             $situacao_executado = 0;
             $situacao_cancelado = 0;
+            
+            // Tratar dados por sanitários
+            foreach ($dados as $value) {
+                $dados_convertidos[] = $value["ID_SANITARIO"];
+            }
+            $dados_convertidos = array_unique($dados_convertidos, SORT_REGULAR); //Elimina os sanitários repetidos
             foreach ($dados as $key => $value) {
-                     // Soma as Situações dos Exames
-                     $situacao_agendado = (int)$value['ID_SITUACAO_SANITARIO'] == "32" ? $situacao_agendado+1 : $situacao_agendado ;
-                     $situacao_executado = (int)$value['ID_SITUACAO_SANITARIO'] == "33" ? $situacao_executado+1 :  $situacao_executado;
-                     $situacao_cancelado = (int)$value['ID_SITUACAO_SANITARIO'] == "87" ? $situacao_cancelado+1 :  $situacao_cancelado;
+                foreach ($dados_convertidos as $key1 => $id_sanitario) {
+                    
+                    if ($id_sanitario == $value["ID_SANITARIO"]) {
+                        $animal[$key1][] = [
+                            "ID_ANIMAL"     => $value["ID_ANIMAL"],
+                            "NOME_ANIMAL"   => $value["NOME_ANIMAL"]
+                        ];
 
-                     $dados[$key]['CONTADOR'] =  $key+1;
+                        $dados_finais[$key1] = [
+                            "ID_SANITARIO"                 => $value["ID_SANITARIO"],
+                            "DESCRICAO_SANITARIO"          => $value["DESCRICAO_SANITARIO"],
+                            "DATA_SANITARIO"               => $value["DATA_SANITARIO"],  
+                            "ID_SITUACAO_SANITARIO"        => $value["ID_SITUACAO_SANITARIO"],  
+                            "SITUACAO_SANITARIO"           => $value["SITUACAO_SANITARIO"],  
+                            "RESPONSAVEL_SANITARIO"        => $value["RESPONSAVEL_SANITARIO"],  
+                            "QUANTIDADE_ANIMAIS_SANITARIO" => count($animal[$key1]),
+                            "DETALHES_SANITARIO"           => $value["DETALHES_SANITARIO"],
+                            "ANIMAIS"                      => $animal[$key1]
+                        ];
+                    }
+                }
+            }
+
+            foreach ($dados_finais as $key => $value) { //Elimina animais repetidos e aplica a contagem total para cada sanitario
+                $dados_finais[$key]["ANIMAIS"] = array_values(array_unique($dados_finais[$key]["ANIMAIS"], SORT_REGULAR));
+                
+                // Soma as Situações dos Exames
+                $situacao_agendado  = (int)$value['ID_SITUACAO_SANITARIO'] == "32" ? $situacao_agendado+1  :  $situacao_agendado ;
+                $situacao_executado = (int)$value['ID_SITUACAO_SANITARIO'] == "33" ? $situacao_executado+1 :  $situacao_executado;
+                $situacao_cancelado = (int)$value['ID_SITUACAO_SANITARIO'] == "87" ? $situacao_cancelado+1 :  $situacao_cancelado;
+
+                $dados[$key]['CONTADOR'] =  $key+1;
             }
             $somatorio = [
-                "TOTAL_GERAL_EXAMES" => (int)$key+1,
+                "TOTAL_GERAL_EXAMES" => count($dados_finais),
                 "SITUACAO_AGENDADO" => (int)$situacao_agendado,
                 "SITUACAO_EXECUTADO" => (int)$situacao_executado,
                 "SITUACAO_CANCELADO" => (int)$situacao_cancelado               
             ];
+            $dados = array_values($dados_finais);
+            
             return sucesso("", ["dados"=>$dados, "resumo"=> $somatorio]);
         } catch (\Throwable $th) {
             throw new Exception($th->getMessage(), (int)$th->getCode());
@@ -90,17 +128,19 @@ class SanitarioModel
         
     }
 
+
     public function listar_exames(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
-        $id_proprietario    = @$params['id_proprietario'];
-        $palavra_chave      = @$params['palavra_chave'];
-        $data_inicial       = @$params['data_inicial'];
-        $data_final         = @$params['data_final'];
-        $resultado_exame  = @$params['resultado_exame'];
+        $id_proprietario = @$params['id_proprietario'];
+        $palavra_chave   = @$params['palavra_chave'];
+        $data_inicial    = @$params['data_inicial'];
+        $data_final      = @$params['data_final'];
+        $resultado_exame = @$params['resultado_exame'];
 
-        if (!@$id_proprietario || !$data_inicial || !$data_final || ! $resultado_exame) 
-            return erro("Parâmetros inválidos ou faltantes!");
+        if (!@$id_proprietario || !$data_inicial || !$data_final || ! $resultado_exame) return erro("Parâmetros inválidos ou faltantes!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 10);
         
         // Define o Grupo
         $filtro_resultado = (int)$resultado_exame == 1 ? "" : "" ;

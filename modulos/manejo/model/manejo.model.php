@@ -18,6 +18,8 @@ class ManejoModel
 
         if (!$tipo_movimentacao || !$data_inicial || !$id_proprietario) return erro("Parâmetros inválidos ou faltantes!");
 
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 11);
+
         try {
 
             // Define o Grupo
@@ -111,6 +113,8 @@ class ManejoModel
         $palavra_chave      = $params['palavra_chave'];
 
         if (!$id_proprietario) return erro("Parâmetros inválidos ou faltantes!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 12);
 
         try {
 
@@ -266,6 +270,8 @@ class ManejoModel
 
         if (!$id_proprietario) return erro("Parâmetros inválidos ou faltantes!");
 
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 13);
+
         try {
 
             $query_sql = 
@@ -382,7 +388,7 @@ class ManejoModel
 
         $post->id_filial = !vazio($post->id_filial) ? $post->id_filial : 0;
 
-
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 12);
 
         $connect = $this->conn->conectar();
         $query =

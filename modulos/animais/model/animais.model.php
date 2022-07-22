@@ -11,7 +11,7 @@ class AnimaisModel
 
     /**
      * PLANTEL
-     */
+    */
     public function detalhes_animal_cobricoes(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -91,13 +91,18 @@ class AnimaisModel
         }
         
     }
+
     public function detalhes_animal_exames(ServerRequestInterface $request)
     {
+
         $params = (array)$request->getParsedBody();
         $id_animal = $params['id_animal'];
         $id_proprietario = $params['id_proprietario'];
 
         if (!$id_animal || !$id_proprietario) return erro("Animal ou Haras com identificação incorreta!", []);
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 10);
+
         try {
             $query_sql = 
                         "SELECT  
@@ -132,14 +137,20 @@ class AnimaisModel
         }
         
     }
+
     public function detalhes_animal_filhos(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
+        
         $id_animal = $params['id_animal'];
         $id_proprietario = $params['id_proprietario'];
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 3);
+        
         $url_fotos = URL_FOTOS;
 
         if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!");
+
         try {
             $query_sql = 
                         "SELECT  
@@ -206,12 +217,17 @@ class AnimaisModel
         }
         
     }
+
+
     public function detalhes_animal_genealogia(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
         $id_animal = $params['id_animal'];
 
         if (!$id_animal) return erro("Animal com identificação incorreta!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 3);
+
         try {
             $query_sql = 
                         "SELECT 
@@ -249,6 +265,9 @@ class AnimaisModel
         }
         
     }
+
+
+    
     public function detalhes_animal_manejo(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -256,6 +275,9 @@ class AnimaisModel
         $id_proprietario    = $params['id_proprietario'];
 
         if (!$id_animal || !$id_proprietario) return erro("Animal ou Haras com identificação incorreta!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 21);
+
         try {
             $query_sql = 
                         "SELECT  
@@ -293,6 +315,8 @@ class AnimaisModel
         }
         
     }
+
+
     public function detalhes_animal_negocios(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -300,6 +324,8 @@ class AnimaisModel
         $id_proprietario    = $params['id_proprietario'];
 
         if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 22);
     
         try {
             $query_sql = 
@@ -379,6 +405,9 @@ class AnimaisModel
         }
         
     }
+
+
+
     public function detalhes_animal_perfil(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -387,6 +416,8 @@ class AnimaisModel
         $url_fotos          = URL_FOTOS;
 
         if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!");
+
+        // ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 3);
         
         try {
             $query_sql = 
@@ -516,6 +547,9 @@ class AnimaisModel
         }
         
     }
+
+
+    
     public function detalhes_animal_sanitario(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -523,6 +557,10 @@ class AnimaisModel
         $id_proprietario    = $params['id_proprietario'];
 
         if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!", []);
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 9);
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 20);
+
         try {
                 $query_sql = 
                         "SELECT  
@@ -559,6 +597,9 @@ class AnimaisModel
         }
         
     }
+
+
+
     public function detalhes_animal_socios(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
@@ -566,6 +607,9 @@ class AnimaisModel
         $id_proprietario    = $params['id_proprietario'];
 
         if (!$id_animal || !$id_proprietario) return erro("Animal ou Proprietário com identificação incorreta!");
+        
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 3);
+
         try {
             $query_sql = 
                         "SELECT * FROM 
@@ -1358,7 +1402,9 @@ class AnimaisModel
     
     public function listar_plantel(ServerRequestInterface $request)
     {
+
         $params = (array)$request->getParsedBody();
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 3);
 
         $id_proprietario = (int)trim($params['id_proprietario']);
         $palavra_chave = trim($params['palavra_chave']);

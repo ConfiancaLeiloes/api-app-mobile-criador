@@ -7,21 +7,25 @@ class NegociosModel
     public function __construct($conn = null) {
        $this->conn = new ConexaoModel();
     }
+
+
+
     public function listar_negocios(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
-        $id_proprietario    = $params['id_proprietario'];
-        $palavra_chave      = $params['palavra_chave'];
-        $data_inicial       = $params['data_inicial'];
-        $data_final         = $params['data_final'];
-        $tipo_negocio       = $params['tipo_negocio'];
-        $tipo_produto       = $params['tipo_produto'];
-        $situacao_financeiro= $params['situacao_financeiro'];    
+        $id_proprietario = $params['id_proprietario'];
+        $palavra_chave = $params['palavra_chave'];
+        $data_inicial  = $params['data_inicial'];
+        $data_final    = $params['data_final'];
+        $tipo_negocio  = $params['tipo_negocio'];
+        $tipo_produto  = $params['tipo_produto'];
+        $situacao_financeiro = $params['situacao_financeiro'];    
         $situacao_entrega   = $params['situacao_entrega'];
         $situacao_negocio   = $params['situacao_negocio'];
         
-        if (!@$data_inicial || !@$id_proprietario || !@$situacao_negocio || !@$situacao_financeiro || !@$tipo_produto || !@$situacao_entrega || !@$tipo_negocio)
-         return erro("Parâmetros inválidos ou faltantes!");
+        if (!@$data_inicial || !@$id_proprietario || !@$situacao_negocio || !@$situacao_financeiro || !@$tipo_produto || !@$situacao_entrega || !@$tipo_negocio) return erro("Parâmetros inválidos ou faltantes!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 22);
 
         try {
 
@@ -30,6 +34,7 @@ class NegociosModel
             $filtro_tipo_negocio = (int)$tipo_negocio == 2 ? " tab_compras_vendas_animais.id_tipo_negocio = '88' AND " : $filtro_tipo_negocio;
             $filtro_tipo_negocio = (int)$tipo_negocio == 3 ? " tab_compras_vendas_animais.id_tipo_negocio = '89' AND " : $filtro_tipo_negocio;
             $filtro_tipo_negocio = (int)$tipo_negocio == 4 ? " tab_compras_vendas_animais.id_tipo_negocio = '90' AND " : $filtro_tipo_negocio;
+            $filtro_tipo_negocio = (int)$tipo_negocio == 5 ? " tab_compras_vendas_animais.id_tipo_negocio = '118' AND " : $filtro_tipo_negocio;
 
             // Define o Tipo de Produto Comprado/Vendido
             $filtro_tipo_produto = (int)$tipo_produto == 1 ? "" : "" ;
@@ -281,14 +286,18 @@ class NegociosModel
             throw new Exception($th->getMessage(), (int)$th->getCode());
         }        
     }
+
+
+
     public function listar_clientes(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
         $id_proprietario    = $params['id_proprietario'];
         $palavra_chave      = $params['palavra_chave'];
         
-        if (!@$id_proprietario)
-         return erro("Parâmetros inválidos ou faltantes!");
+        if (!@$id_proprietario) return erro("Parâmetros inválidos ou faltantes!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 15);
 
         try {
 
@@ -401,14 +410,20 @@ class NegociosModel
             throw new Exception($th->getMessage(), (int)$th->getCode());
         }        
     }
+
+
+
+
     public function detalhes_negocio_compra_venda(ServerRequestInterface $request)
     {
         $params = (array)$request->getParsedBody();
         $id_proprietario    = $params['id_proprietario'];
         $id_negocio         = $params['id_negocio'];
         
-        if (!@$id_proprietario || !@$id_negocio)
-         return erro("Negócio ou Proprietário com identificação incorreta!");
+        if (!@$id_proprietario || !@$id_negocio) return erro("Negócio ou Proprietário com identificação incorreta!");
+
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 14);
+        ( new UsuarioController() )->checa_permissao_acesso($params['id_usuario'], 15);
 
         try {
 
