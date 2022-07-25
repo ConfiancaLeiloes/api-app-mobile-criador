@@ -159,6 +159,19 @@ class AnimaisController
     }
 
 
+    /**
+	 * Método delete()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+    public function delete(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $res = $this->animais->delete($request);
+        $response->getBody()->write($res);
+        return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
+    }
+
+
 
  
 }

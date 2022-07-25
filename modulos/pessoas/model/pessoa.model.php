@@ -158,7 +158,7 @@ class PessoaModel
 
 		$connect = $this->conn->conectar();
 		$query =
-		"   SELECT
+		" SELECT
 				id_pessoa, 
 				upper(nome_razao_social) AS nome_razao_social
 			FROM tab_pessoas
@@ -187,6 +187,8 @@ class PessoaModel
 
 		return sucesso("{$stmt->rowCount()} REGISTROS ENCONTRADOS...", $stmt->fetchAll(PDO::FETCH_OBJ));
 	}
+
+
 
 
 }

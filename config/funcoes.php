@@ -28,8 +28,11 @@ function modo_dev() {
 function banco_teste() {
 
   $return =
-    ( isset($_GET['banco_teste']) && (int)trim($_GET['banco_teste'] ) == 1) ||
-    ( isset($_POST['banco_teste']) && (int)trim($_POST['banco_teste']) == 1) ;
+    ( isset($_GET['banco_teste']) && (int)trim($_GET['banco_teste'] ) == 1)  ||
+    ( isset($_POST['banco_teste']) && (int)trim($_POST['banco_teste']) == 1)
+
+    || REMOTE_ADDR == '200.233.225.192'
+  ;
 
 
   if ( !$return ) {

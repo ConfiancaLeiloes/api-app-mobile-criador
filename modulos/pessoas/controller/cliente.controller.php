@@ -38,5 +38,17 @@ class ClienteController extends PessoaController
 	}
 
 
+	/**
+	 * Método cadastro
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/	
+	public function delete(ServerRequestInterface $request, ResponseInterface $response) {
+		$res = $this->cliente->delete($request);
+		$response->getBody()->write($res);
+		return $response->withStatus( json_decode($res)->http_status_code )->withHeader('Content-type', 'application/json');
+	}
+
+
 
 }

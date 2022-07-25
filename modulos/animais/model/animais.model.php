@@ -780,10 +780,7 @@ class AnimaisModel
             $filtro_grupo = (int)$grupo == 99 ? "" : " AND tab_animais.id_grupo = $grupo  ";
 
             $query_sql = 
-                        "
-                        SELECT
-                          *
-                        FROM
+                        " SELECT * FROM
                           (
                             (
                               SELECT
@@ -1372,9 +1369,10 @@ class AnimaisModel
                               NOME_ANIMAL ASC,
                               NOME_SOCIO ASC
                           ) AS tab_socios_animais
-                        HAVING
+                            HAVING
                           COTAS_ANIMAL < 100
-                          AND COTAS_ANIMAL > 0";
+                          AND COTAS_ANIMAL > 0
+                          ";
 
             $pdo = $this->conn->conectar();
             $res = $pdo->query($query_sql);
@@ -2591,6 +2589,84 @@ class AnimaisModel
 
 
 
+    /**
+	 * Método delete()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+    public function delete(ServerRequestInterface $request) {
 
+        if ( REQUEST_METHOD != 'DELETE' ) {
+            return erro("REQUEST_METHOD inválido!");
+        }
+        
+        $post = (object)$request->getParsedBody();
+
+        if ( !is_numeric($post->id_animal) || (int)$post->id_animal <= 0 ) {
+            msg_debug("CAMPO [ID_ANIMAL] INVÁLIDO!");
+            return erro("Animal não identificado!", 400, $post);
+        }
+    
+        $connect = $this->conn->conectar();
+
+        $query =
+        "   SELECT
+                id_animal, nome, id_usuario_sistema
+            FROM tab_animais WHERE id_animal = :id_animal
+        ";
+        $stmt = $connect->prepare($query);
+        if( !$stmt ) {
+            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+        }
+        $stmt->bindParam(':id_animal', $post->id_animal, PDO::PARAM_INT);
+        if( !$stmt->execute() ) {
+            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+        }
+        if ( $stmt->rowCount() <= 0 ) {   
+            msg_debug("ID DE ANIMAL {$post->id_animal} NÃO EXISTE NO BANCO!");
+            return erro("ANIMAL INFORMADO NÃO EXISTE NA BASE DE DADOS!", 404, [$post]);
+        }
+        
+        $animal = $stmt->fetch(PDO::FETCH_OBJ);
+
+        if ( (int)$animal->id_usuario_sistema != (int)$post->id_proprietario ) {
+            msg_debug("ID DE ANIMAL '{$post->id_animal}' PERTENCE A FAZENDA DE ID '{$animal->id_usuario_sistema}'!");
+            return erro('ANIMAL INFORMADO NÃO EXISTE EM SEU PLANTEL!', 404, [$post]);
+        }
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        $connect->beginTransaction();
+
+        $query_delete =
+        "   DELETE FROM tab_animais
+            WHERE (
+                id_animal = :id_animal AND
+                id_usuario_sistema = :id_proprietario
+            )
+        ";
+        $stmt = $connect->prepare($query_delete);
+        if( !$stmt ) {
+            return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+        }
+        $stmt->bindParam(':id_animal', $post->id_animal, PDO::PARAM_INT);
+        $stmt->bindParam(':id_proprietario', $post->id_proprietario, PDO::PARAM_INT);
+        if( !$stmt->execute() ) {
+
+            if ( $stmt->errorInfo()[1] == 1451 ) {
+                msg_debug($stmt->errorInfo()[2]);
+                return erro("ESTE REGISTRO CONTEM UM OU MAIS REGISTROS RELACIONADOS!", 500);
+            }
+
+            return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+        }
+        if ( $stmt->rowCount() <= 0 ) {
+            msg_debug("REGISTRO DE ANIMAL {$post->id_animal} NÃO EXCLUÍDO - MOTIVO DESCONHECIDO!");
+            return erro("ANIMAL NÃO EXCLUÍDO!");
+        }
+        $connect->commit();
+
+        return sucesso('ANIMAL EXCLUÍDO COM SUCESSO!');
+    }
 
 } # AnimaisModel {}

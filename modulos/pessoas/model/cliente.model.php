@@ -416,5 +416,94 @@ class ClienteModel extends PessoaModel
 
 
 
+	
+	/**
+	 * Método delete()
+	 * @author Antonio Ferreira <@toniferreirasantos>
+	 * @return function
+	*/
+	public function delete(ServerRequestInterface $request) {
+
+		if ( REQUEST_METHOD != 'DELETE' ) {
+			return erro("REQUEST_METHOD inválido!");
+		}
+		
+		$post = (object)$request->getParsedBody();
+
+		if ( !is_numeric($post->id_pessoa) || (int)$post->id_pessoa <= 0 ) {
+			msg_debug("CAMPO [ID_PESSOA] INVÁLIDO!");
+			return erro("Pessoa não identificada!", 400, $post);
+		}
+		
+		if ( (int)$post->id_pessoa == (int)$post->id_proprietario ) {
+			return erro('PESSOA INFORMADA NÃO PODE SER DELETADA! - USUÁRIO MASTER', 404, [$post]);
+		}
+
+		if ( (int)$post->id_pessoa == (int)$post->id_usuario ) {
+			return erro('PESSOA INFORMADA NÃO PODE SER DELETADA! (AUTO DELETE)', 404, [$post]);
+		}
+
+		$connect = $this->conn->conectar();
+
+		$query =
+		" SELECT
+				id_pessoa, id_usuario_sistema, nome_razao_social
+			FROM tab_pessoas WHERE id_pessoa = :id_pessoa
+		";
+		$stmt = $connect->prepare($query);
+		if( !$stmt ) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+		$stmt->bindParam(':id_pessoa', $post->id_pessoa, PDO::PARAM_INT);
+		if( !$stmt->execute() ) {
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {   
+			msg_debug("ID DE PESSOA {$post->id_pessoa} NÃO EXISTE NO BANCO!");
+			return erro("PESSOA INFORMADA NÃO EXISTE NA BASE DE DADOS!", 404, [$post]);
+		}
+		
+		$pessoa = $stmt->fetch(PDO::FETCH_OBJ);
+
+		if ( (int)$pessoa->id_usuario_sistema != (int)$post->id_proprietario ) {
+			msg_debug("ID DE PESSOA '{$post->id_pessoa}' PERTENCE A FAZENDA DE ID '{$pessoa->id_usuario_sistema}'!");
+			return erro('PESSOA INFORMADA NÃO EXISTE EM SUA BASE DE DADOS!', 404, [$post]);
+		}
+
+		# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		$connect->beginTransaction();
+
+		$query_delete =
+		" DELETE FROM tab_pessoas
+			WHERE (
+				id_pessoa = :id_pessoa AND
+				id_usuario_sistema = :id_proprietario
+			)
+		";
+		$stmt = $connect->prepare($query_delete);
+		if( !$stmt ) {
+			return erro("Erro: {$connect->errno} - {$connect->error}", 500);
+		}
+		$stmt->bindParam(':id_pessoa', $post->id_pessoa, PDO::PARAM_INT);
+		$stmt->bindParam(':id_proprietario', $post->id_proprietario, PDO::PARAM_INT);
+		if( !$stmt->execute() ) {
+
+			if ( $stmt->errorInfo()[1] == 1451 ) {
+				msg_debug($stmt->errorInfo()[2]);
+				return erro("ESTE REGISTRO CONTÉM UM OU MAIS REGISTROS RELACIONADOS!", 500);
+			}
+
+			return erro("SQLSTATE: #". $stmt->errorInfo()[ modo_dev() ? 1 : 2 ], 500);
+		}
+		if ( $stmt->rowCount() <= 0 ) {
+			msg_debug("REGISTRO DE PESSOA {$post->id_pessoa} NÃO EXCLUÍDO - MOTIVO DESCONHECIDO!");
+			return erro("PESSOA NÃO EXCLUÍDA!");
+		}
+		$connect->commit();
+
+		return sucesso('PESSOA EXCLUÍDA COM SUCESSO!');
+	}
+
 
 }
